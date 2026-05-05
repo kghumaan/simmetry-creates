@@ -237,7 +237,6 @@ function LandingC({ navigate }) {
           <aside className="lC-mast">
             <div className="caption" style={{ color: 'var(--fg-muted)' }}>Volume IV<br />Spring · 2026</div>
             <div className="lC-mast__rule" />
-            <div className="caption" style={{ color: 'var(--fg-muted)' }}>{mode === 'jewelry' ? 'Cream edition' : 'Olive edition'}</div>
             <div className="lC-mast__emblem"><Emblem size={120} /></div>
             <div className="caption num" style={{ color: 'var(--fg-muted)' }}>No. 04 / 12</div>
           </aside>

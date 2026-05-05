@@ -12,9 +12,6 @@ function Gallery({ navigate }) {
     <div className="gal">
       <section className="smy-container gal-head">
         <div className="gal-head__top">
-          <span className="caption" style={{ color: 'var(--fg-muted)' }}>
-            {mode === 'jewelry' ? 'Cream edition' : 'Olive edition'}
-          </span>
           <span className="caption num" style={{ color: 'var(--fg-muted)' }}>
             {images.length} pieces
           </span>
