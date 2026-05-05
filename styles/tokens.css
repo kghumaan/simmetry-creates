@@ -1,0 +1,160 @@
+/* =========================================================================
+   Simmetry.Creates — Core Tokens
+   Two themes, one architecture. Mode is set via [data-mode="jewelry"|"woodwork"]
+   on a wrapping element (typically <html> or a section). Tokens transition
+   with a 400ms ease so a mode switch feels considered, not instant.
+   ========================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;500&family=Inter:wght@400;500&display=swap");
+
+/* -------- Mode: Jewelry (default) ----------------------------------------- */
+:root,
+[data-mode="jewelry"] {
+  --bg:           #F5F0E8;  /* warm cream */
+  --surface:      #FFFFFF;  /* cards, modals */
+  --fg:           #2B1810;  /* near-black with warmth */
+  --fg-muted:     #6B5D52;  /* secondary text */
+  --accent:       #B8935A;  /* warm gold */
+  --hairline:     #D9CFC0;  /* borders, dividers */
+
+  /* Photography ground reference for piece cards */
+  --photo-ground: #EDE6DA;
+}
+
+/* -------- Mode: Woodwork -------------------------------------------------- */
+[data-mode="woodwork"] {
+  --bg:           #3D4A2F;  /* deep olive */
+  --surface:      #4A573B;  /* lifted olive */
+  --fg:           #F0EBE0;  /* warm off-white */
+  --fg-muted:     #B8B5A8;  /* muted warm gray */
+  --accent:       #C4A57B;  /* brighter warm gold */
+  --hairline:     #5A6B47;
+
+  --photo-ground: #2F3925;
+}
+
+/* -------- Semantic (mode-agnostic) ---------------------------------------- */
+:root {
+  --error: #A0463C;
+
+  /* Type families */
+  --font-display: "Cormorant Garamond", "EB Garamond", Garamond, serif;
+  --font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Spacing scale (4px base) */
+  --s-1:   4px;
+  --s-2:   8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-6:  24px;
+  --s-8:  32px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-24: 96px;
+  --s-32: 128px;
+
+  /* Shape — rectangles and hairlines, no soft cards */
+  --radius-0: 0;
+  --radius-1: 2px;       /* inputs, small UI */
+  --hairline-w: 1px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --mode-duration: 400ms;
+}
+
+/* -------- Mode transition ------------------------------------------------- */
+[data-mode],
+[data-mode] * {
+  transition:
+    background-color var(--mode-duration) var(--ease),
+    color var(--mode-duration) var(--ease),
+    border-color var(--mode-duration) var(--ease),
+    opacity var(--mode-duration) var(--ease);
+}
+
+/* -------- Base ------------------------------------------------------------ */
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  font-feature-settings: "tnum" 0;  /* on per-element where needed */
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* -------- Type scale (desktop) ------------------------------------------- */
+.h1, h1 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 64px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.h2, h2 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 40px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+
+.h3, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 24px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.body-l {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.body, p {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Caption — used for labels, mode toggle text, metadata, small caps */
+.caption {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* Tabular numerics for metadata (dates, dimensions) */
+.num,
+.metadata {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------- Hairline -------------------------------------------------------- */
+.hairline {
+  border: 0;
+  border-top: var(--hairline-w) solid var(--hairline);
+  margin: 0;
+}
+
+/* -------- Mobile downscale (proportional) -------------------------------- */
+@media (max-width: 720px) {
+  .h1, h1 { font-size: 40px; }
+  .h2, h2 { font-size: 28px; }
+  .h3, h3 { font-size: 20px; }
+}

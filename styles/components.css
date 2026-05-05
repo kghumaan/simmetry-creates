@@ -1,0 +1,187 @@
+/* =========================================================================
+   Simmetry.Creates — Component styles
+   Pure CSS, mode-aware via [data-mode] tokens from colors_and_type.css
+   ========================================================================= */
+
+/* ---------- Mode toggle --------------------------------------------------- */
+.smy-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  user-select: none;
+}
+
+.smy-mode-toggle__btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0.6;
+  transition:
+    opacity 200ms var(--ease),
+    color var(--mode-duration) var(--ease);
+}
+
+.smy-mode-toggle__btn:hover {
+  opacity: 1;
+}
+
+.smy-mode-toggle__btn[aria-pressed="true"] {
+  opacity: 1;
+  cursor: default;
+}
+
+.smy-mode-toggle__sep {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  background: var(--hairline);
+}
+
+/* ---------- Top nav ------------------------------------------------------- */
+.smy-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.smy-nav__brand {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 22px;
+  letter-spacing: 0.005em;
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.smy-nav__brand .dot {
+  color: var(--accent);
+}
+
+.smy-nav__right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.smy-nav__links {
+  display: flex;
+  gap: 28px;
+}
+
+.smy-nav__link {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 200ms var(--ease);
+}
+
+.smy-nav__link:hover,
+.smy-nav__link[aria-current="page"] {
+  opacity: 1;
+}
+
+.smy-nav__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--hairline);
+}
+
+/* ---------- Piece card ---------------------------------------------------- */
+.smy-piece {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.smy-piece__media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  background: var(--photo-ground);
+  overflow: hidden;
+  transition: opacity 300ms var(--ease);
+}
+
+.smy-piece:hover .smy-piece__media {
+  opacity: 0.92;
+}
+
+.smy-piece__media::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 400ms var(--ease);
+}
+
+.smy-piece:hover .smy-piece__media::after {
+  transform: scaleX(1);
+}
+
+/* Inner placeholder mark — a hairline cross at the optical center.
+   Real photography would replace this entirely. */
+.smy-piece__placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hairline);
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+
+.smy-piece__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.smy-piece__name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--fg);
+}
+
+.smy-piece__meta {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.smy-piece__meta .dot {
+  color: var(--hairline);
+  margin: 0 8px;
+}
