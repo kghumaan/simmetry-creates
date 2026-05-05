@@ -3,29 +3,26 @@
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
+const WW_PATH_RE = /^\/(ww|woodwork)(\/|$)/;
+const JW_PATH_RE = /^\/jewelry(\/|$)/;
+
 function PageRouter({ navigate, route, variant }) {
   const section = currentSection(route);
-  // Sync mode from URL on every route change (deep link → /woodwork loads olive)
+  // Sync mode from URL on every route change. Bare `/` defaults to jewelry.
   const { mode, setMode } = useMode();
   useEffect(() => {
-    if (route.startsWith('/woodwork') && mode !== 'woodwork') {
-      // No animation — direct visit. Just commit theme.
-      document.documentElement.setAttribute('data-mode', 'woodwork');
-      localStorage.setItem('smy.mode', 'woodwork');
-      // setState through context to keep React in sync
-      setMode('woodwork', null);
-    } else if (route.startsWith('/jewelry') && mode !== 'jewelry') {
-      document.documentElement.setAttribute('data-mode', 'jewelry');
-      localStorage.setItem('smy.mode', 'jewelry');
-      setMode('jewelry', null);
+    const targetMode = WW_PATH_RE.test(route) ? 'woodwork' : 'jewelry';
+    if (mode !== targetMode) {
+      document.documentElement.setAttribute('data-mode', targetMode);
+      localStorage.setItem('smy.mode', targetMode);
+      setMode(targetMode, null);
     }
     // scroll to top on route change
     window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
   }, [route]);
 
-  if (section === 'gallery') return <Gallery navigate={navigate} />;
-  if (section === 'about')   return <About   navigate={navigate} />;
-  return <LandingA navigate={navigate} />;
+  if (section === 'about') return <About navigate={navigate} />;
+  return <Gallery navigate={navigate} />;
 }
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;

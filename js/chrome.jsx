@@ -8,14 +8,21 @@ const { useState, useEffect, useRef, useCallback, useMemo, createContext, useCon
 const ModeContext = createContext(null);
 
 function readInitialMode() {
-  // URL beats localStorage; "/jewelry/..." → jewelry, "/woodwork/..." → woodwork
+  // URL beats localStorage; `/ww` and `/woodwork` → woodwork, `/jewelry` → jewelry,
+  // bare `/` (home) always opens in jewelry.
   const hash = window.location.hash || '#/';
   const path = hash.replace(/^#/, '') || '/';
-  if (path.startsWith('/woodwork')) return 'woodwork';
-  if (path.startsWith('/jewelry')) return 'jewelry';
-  const stored = localStorage.getItem('smy.mode');
-  if (stored === 'woodwork' || stored === 'jewelry') return stored;
+  if (/^\/(ww|woodwork)(\/|$)/.test(path)) return 'woodwork';
+  if (/^\/jewelry(\/|$)/.test(path)) return 'jewelry';
   return 'jewelry';
+}
+
+const WW_RE = /^\/(ww|woodwork)(\/|$)/;
+const JW_RE = /^\/jewelry(\/|$)/;
+function routeMode(route) {
+  if (WW_RE.test(route)) return 'woodwork';
+  if (JW_RE.test(route)) return 'jewelry';
+  return 'jewelry'; // home `/` defaults to jewelry
 }
 
 function ModeProvider({ children }) {
@@ -150,23 +157,23 @@ function TopNav({ route, navigate }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const modePrefix = (m) => m === 'woodwork' ? '/ww' : '/jewelry';
+
   const onToggle = (target, e) => {
     if (target === mode) return;
     const rect = e.currentTarget.getBoundingClientRect();
     setMode(target, rect);
     // Update URL: keep "section" but swap mode prefix
     const sub = currentSection(route);
-    if (sub === 'gallery') navigate('/' + target);
-    else if (sub === 'about') navigate('/' + target + '/about');
-    else navigate('/' + target);
+    const prefix = modePrefix(target);
+    if (sub === 'about') navigate(prefix + '/about');
+    else navigate(prefix);
   };
-
-  const isOn = (path) => route === path || (path === '/' && (route === '/jewelry' || route === '/woodwork'));
 
   return (
     <header className={`smy-topnav ${hidden ? 'is-hidden' : ''}`}>
       <div className="smy-topnav__inner">
-        <a className="smy-brand smy-brand--with-mark" href="#/" onClick={e => { e.preventDefault(); navigate('/'); }}>
+        <a className="smy-brand smy-brand--with-mark" href="#/" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
           <span className="smy-brand__emblem" aria-hidden="true">
             <span
               className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
@@ -196,22 +203,22 @@ function TopNav({ route, navigate }) {
           <span className="smy-topnav__divider" />
           <nav className="smy-topnav__links">
             <a className="smy-navlink"
-               href={'#/' + mode}
+               href={'#' + modePrefix(mode)}
                aria-current={currentSection(route) === 'gallery' ? 'page' : undefined}
-               onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+               onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
               Gallery
             </a>
             <a className="smy-navlink"
-               href={'#/' + mode + '/about'}
+               href={'#' + modePrefix(mode) + '/about'}
                aria-current={currentSection(route) === 'about' ? 'page' : undefined}
-               onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
             <a className="smy-navlink"
-               href={'#/' + mode + '/about#contact'}
+               href={'#' + modePrefix(mode) + '/about#contact'}
                onClick={e => {
                  e.preventDefault();
-                 navigate('/' + mode + '/about');
+                 navigate(modePrefix(mode) + '/about');
                  setTimeout(() => {
                    const el = document.getElementById('contact');
                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -227,10 +234,9 @@ function TopNav({ route, navigate }) {
 }
 
 function currentSection(route) {
-  if (route === '/' || route === '') return 'home';
-  if (route === '/jewelry' || route === '/woodwork') return 'gallery';
   if (route.endsWith('/about')) return 'about';
-  return 'home';
+  // Home + any mode root is the gallery
+  return 'gallery';
 }
 
 /* =========================================================================
@@ -239,6 +245,8 @@ function currentSection(route) {
 
 function Footer({ navigate }) {
   const { mode } = useMode();
+  const wwHref = '/ww';
+  const aboutHref = (mode === 'woodwork' ? '/ww' : '/jewelry') + '/about';
   return (
     <footer className="smy-footer">
       <div className="smy-container">
@@ -255,16 +263,16 @@ function Footer({ navigate }) {
             <h6>Work</h6>
             <ul>
               <li><a href="#/jewelry" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>Jewelry</a></li>
-              <li><a href="#/woodwork" onClick={e => { e.preventDefault(); navigate('/woodwork'); }}>Woodwork</a></li>
-              <li><a href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>Studio</a></li>
+              <li><a href={'#' + wwHref} onClick={e => { e.preventDefault(); navigate(wwHref); }}>Woodwork</a></li>
+              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Studio</a></li>
             </ul>
           </div>
           <div className="smy-footer__col">
             <h6>Practice</h6>
             <ul>
-              <li><a href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>About Ashish</a></li>
-              <li><a href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>Process</a></li>
-              <li><a href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>Begin a commission</a></li>
+              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>About Ashish</a></li>
+              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Process</a></li>
+              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Begin a commission</a></li>
             </ul>
           </div>
           <div className="smy-footer__col">
