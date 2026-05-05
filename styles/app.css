@@ -9,6 +9,7 @@ html, body {
   background: var(--bg);
   color: var(--fg);
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 /* Mode transition: kept on tokens; we suppress per-element transition
@@ -179,7 +180,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   width: 44px; height: 44px;
-  margin-right: -10px;
+  flex-shrink: 0;
   background: none;
   border: 0;
   padding: 0;
