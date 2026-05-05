@@ -107,22 +107,19 @@ img { display: block; max-width: 100%; }
   align-items: center;
   gap: 28px;
 }
-@media (max-width: 760px) {
-  .smy-topnav__right { gap: 14px; }
-  .smy-topnav__divider { display: none; }
-  .smy-topnav__links { gap: 18px; }
-  .smy-navlink { font-size: 11px; letter-spacing: 0.08em; }
-  .smy-modetoggle { gap: 8px; }
-  .smy-modetoggle__btn { font-size: 11px; letter-spacing: 0.08em; }
+@media (max-width: 900px) {
+  .smy-topnav__right { gap: 18px; }
+  .smy-topnav__links { gap: 22px; }
 }
-@media (max-width: 480px) {
+/* On mobile we collapse the inline nav into a hamburger panel */
+.smy-menubtn { display: none; }
+@media (max-width: 720px) {
+  .smy-topnav__inline { display: none !important; }
+  .smy-menubtn { display: inline-flex; }
+  .smy-brand { font-size: 22px; }
+}
+@media (max-width: 380px) {
   .smy-brand__word { display: none; }
-  .smy-topnav__inner { padding: 0 16px; }
-  .smy-topnav__right { gap: 10px; }
-  .smy-modetoggle { gap: 6px; }
-  .smy-modetoggle__btn { font-size: 10.5px; letter-spacing: 0.06em; }
-  .smy-navlink { font-size: 10.5px; letter-spacing: 0.06em; }
-  .smy-topnav__links { gap: 12px; }
 }
 
 .smy-topnav__links {
@@ -170,6 +167,98 @@ img { display: block; max-width: 100%; }
   display: inline-block;
   width: 1px; height: 11px;
   background: var(--hairline);
+}
+
+/* Larger variant used inside the mobile panel */
+.smy-modetoggle--lg { gap: 18px; }
+.smy-modetoggle--lg .smy-modetoggle__btn { font-size: 16px; letter-spacing: 0.08em; padding: 8px 0; }
+.smy-modetoggle--lg .smy-modetoggle__sep { height: 18px; }
+
+/* ---------- Hamburger button + mobile panel ------------------------------ */
+.smy-menubtn {
+  align-items: center;
+  justify-content: center;
+  width: 44px; height: 44px;
+  margin-right: -10px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--fg);
+}
+.smy-menubtn__icon {
+  position: relative;
+  display: block;
+  width: 22px; height: 14px;
+}
+.smy-menubtn__icon span {
+  position: absolute;
+  left: 0; right: 0;
+  height: 1.5px;
+  background: var(--fg);
+  border-radius: 1px;
+  transition: transform 260ms var(--ease), opacity 220ms var(--ease), top 260ms var(--ease);
+}
+.smy-menubtn__icon span:nth-child(1) { top: 0; }
+.smy-menubtn__icon span:nth-child(2) { top: 6.25px; }
+.smy-menubtn__icon span:nth-child(3) { top: 12.5px; }
+.smy-menubtn.is-open .smy-menubtn__icon span:nth-child(1) { top: 6.25px; transform: rotate(45deg); }
+.smy-menubtn.is-open .smy-menubtn__icon span:nth-child(2) { opacity: 0; }
+.smy-menubtn.is-open .smy-menubtn__icon span:nth-child(3) { top: 6.25px; transform: rotate(-45deg); }
+
+.smy-panel {
+  position: fixed;
+  left: 0; right: 0;
+  top: 64px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--hairline);
+  max-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  transition: max-height 320ms var(--ease), visibility 0s linear 320ms;
+  z-index: 49;
+}
+.smy-panel.is-open {
+  max-height: calc(100vh - 64px);
+  visibility: visible;
+  transition: max-height 360ms var(--ease), visibility 0s linear 0s;
+}
+.smy-panel__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 28px 24px 36px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.smy-panel__group { display: flex; flex-direction: column; gap: 14px; }
+.smy-panel__nav { gap: 4px; }
+.smy-panel__label {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.smy-panel__link {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--fg);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.smy-panel__link:last-child { border-bottom: 0; }
+.smy-panel__link[aria-current="page"] { color: var(--accent); }
+
+/* Defensively hide the panel on desktop in case the menu state lingers. */
+@media (min-width: 721px) {
+  .smy-panel,
+  .smy-panel.is-open { display: none; }
 }
 
 /* ---------- Mode reveal mask --------------------------------------------- */

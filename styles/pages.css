@@ -363,12 +363,14 @@
 @media (max-width: 720px) { .gal-head { padding: 32px 0 24px; } }
 .gal-head__top {
   display: flex; justify-content: space-between;
+  gap: 16px;
   margin-bottom: 32px;
 }
+@media (max-width: 480px) { .gal-head__top { margin-bottom: 20px; } }
 .gal-head__h {
   font-family: var(--font-display);
   font-weight: 300;
-  font-size: clamp(48px, 7vw, 96px);
+  font-size: clamp(40px, 9vw, 96px);
   line-height: 1.04;
   letter-spacing: -0.012em;
   margin: 0;

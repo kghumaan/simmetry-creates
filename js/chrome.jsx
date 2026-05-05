@@ -142,8 +142,8 @@ function useRoute() {
 function TopNav({ route, navigate }) {
   const { mode, setMode } = useMode();
   const [hidden, setHidden] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
-  const toggleRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -155,6 +155,28 @@ function TopNav({ route, navigate }) {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close the mobile menu whenever the route changes (link tap, brand tap, etc.)
+  useEffect(() => { setMenuOpen(false); }, [route]);
+
+  // Lock body scroll while the panel is open so the page underneath doesn't drift.
+  useEffect(() => {
+    const prev = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = menuOpen ? 'hidden' : prev;
+    return () => { document.documentElement.style.overflow = prev; };
+  }, [menuOpen]);
+
+  // Close on Escape; close on viewport growing past mobile breakpoint.
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    const onResize = () => { if (window.innerWidth > 720) setMenuOpen(false); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   const modePrefix = (m) => m === 'woodwork' ? '/ww' : '/jewelry';
@@ -170,8 +192,19 @@ function TopNav({ route, navigate }) {
     else navigate(prefix);
   };
 
+  const goContact = (e) => {
+    e.preventDefault();
+    navigate(modePrefix(mode) + '/about');
+    setTimeout(() => {
+      const el = document.getElementById('contact');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  const section = currentSection(route);
+
   return (
-    <header className={`smy-topnav ${hidden ? 'is-hidden' : ''}`}>
+    <header className={`smy-topnav ${hidden && !menuOpen ? 'is-hidden' : ''} ${menuOpen ? 'is-menu-open' : ''}`}>
       <div className="smy-topnav__inner">
         <a className="smy-brand smy-brand--with-mark" href="#/" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
           <span className="smy-brand__emblem" aria-hidden="true">
@@ -186,8 +219,9 @@ function TopNav({ route, navigate }) {
           </span>
           <span className="smy-brand__word">Simmetry<span className="dot">.</span>Creates</span>
         </a>
+
         <div className="smy-topnav__right">
-          <div className="smy-modetoggle" ref={toggleRef}>
+          <div className="smy-modetoggle smy-topnav__inline">
             <button
               className="smy-modetoggle__btn"
               aria-pressed={mode === 'jewelry'}
@@ -200,30 +234,81 @@ function TopNav({ route, navigate }) {
               onClick={(e) => onToggle('woodwork', e)}
             >Woodwork</button>
           </div>
-          <span className="smy-topnav__divider" />
-          <nav className="smy-topnav__links">
+          <span className="smy-topnav__divider smy-topnav__inline" />
+          <nav className="smy-topnav__links smy-topnav__inline">
             <a className="smy-navlink"
                href={'#' + modePrefix(mode)}
-               aria-current={currentSection(route) === 'gallery' ? 'page' : undefined}
+               aria-current={section === 'gallery' ? 'page' : undefined}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
               Gallery
             </a>
             <a className="smy-navlink"
                href={'#' + modePrefix(mode) + '/about'}
-               aria-current={currentSection(route) === 'about' ? 'page' : undefined}
+               aria-current={section === 'about' ? 'page' : undefined}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
             <a className="smy-navlink"
                href={'#' + modePrefix(mode) + '/about#contact'}
-               onClick={e => {
-                 e.preventDefault();
-                 navigate(modePrefix(mode) + '/about');
-                 setTimeout(() => {
-                   const el = document.getElementById('contact');
-                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                 }, 80);
-               }}>
+               onClick={goContact}>
+              Contact
+            </a>
+          </nav>
+
+          <button
+            className={`smy-menubtn ${menuOpen ? 'is-open' : ''}`}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="smy-mobile-panel"
+            onClick={() => setMenuOpen(o => !o)}
+          >
+            <span className="smy-menubtn__icon" aria-hidden="true">
+              <span /><span /><span />
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="smy-mobile-panel"
+        className={`smy-panel ${menuOpen ? 'is-open' : ''}`}
+        aria-hidden={!menuOpen}
+      >
+        <div className="smy-panel__inner">
+          <div className="smy-panel__group">
+            <span className="smy-panel__label">Mode</span>
+            <div className="smy-modetoggle smy-modetoggle--lg">
+              <button
+                className="smy-modetoggle__btn"
+                aria-pressed={mode === 'jewelry'}
+                onClick={(e) => onToggle('jewelry', e)}
+              >Jewelry</button>
+              <span className="smy-modetoggle__sep" />
+              <button
+                className="smy-modetoggle__btn"
+                aria-pressed={mode === 'woodwork'}
+                onClick={(e) => onToggle('woodwork', e)}
+              >Woodwork</button>
+            </div>
+          </div>
+
+          <nav className="smy-panel__group smy-panel__nav">
+            <span className="smy-panel__label">Pages</span>
+            <a className="smy-panel__link"
+               aria-current={section === 'gallery' ? 'page' : undefined}
+               href={'#' + modePrefix(mode)}
+               onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
+              Gallery
+            </a>
+            <a className="smy-panel__link"
+               aria-current={section === 'about' ? 'page' : undefined}
+               href={'#' + modePrefix(mode) + '/about'}
+               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
+              About
+            </a>
+            <a className="smy-panel__link"
+               href={'#' + modePrefix(mode) + '/about#contact'}
+               onClick={goContact}>
               Contact
             </a>
           </nav>
