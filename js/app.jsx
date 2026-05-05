@@ -22,7 +22,7 @@ function PageRouter({ navigate, route, variant }) {
   }, [route]);
 
   if (section === 'about') return <About navigate={navigate} />;
-  return <Gallery navigate={navigate} />;
+  return <Gallery navigate={navigate} route={route} />;
 }
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;

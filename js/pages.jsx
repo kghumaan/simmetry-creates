@@ -4,9 +4,28 @@
    Gallery — collection grid, 12 pieces per mode
    ========================================================================= */
 
-function Gallery({ navigate }) {
+function Gallery({ navigate, route }) {
   const { mode } = useMode();
   const images = mode === 'jewelry' ? SMY_DATA.JEWELRY_IMAGES : SMY_DATA.WOODWORK_IMAGES;
+  const prefix = mode === 'woodwork' ? '/ww' : '/jewelry';
+
+  const itemMatch = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)\/?$/);
+  const itemIndex = itemMatch ? Math.min(images.length - 1, Math.max(0, parseInt(itemMatch[1], 10))) : null;
+  const itemImage = itemIndex !== null ? images[itemIndex] : null;
+
+  const closeItem = React.useCallback(() => navigate(prefix), [navigate, prefix]);
+
+  React.useEffect(() => {
+    if (!itemImage) return;
+    const onKey = (e) => { if (e.key === 'Escape') closeItem(); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.documentElement.style.overflow = prevOverflow;
+    };
+  }, [itemImage, closeItem]);
 
   return (
     <div className="gal">
@@ -22,11 +41,21 @@ function Gallery({ navigate }) {
       </section>
 
       <section className="smy-container gal-grid">
-        {images.map((src, i) => (
-          <Reveal key={src} delay={(i % 6) * 50} className="gal-card">
-            <Tile kind="portrait" image={src} />
-          </Reveal>
-        ))}
+        {images.map((src, i) => {
+          const href = '#' + prefix + '/' + i;
+          return (
+            <Reveal key={src} delay={(i % 6) * 50} className="gal-card">
+              <a
+                className="gal-card__link"
+                href={href}
+                aria-label={`Open piece ${i + 1}`}
+                onClick={(e) => { e.preventDefault(); navigate(prefix + '/' + i); }}
+              >
+                <Tile kind="portrait" image={src} />
+              </a>
+            </Reveal>
+          );
+        })}
       </section>
 
       <section className="smy-container gal-end">
@@ -37,6 +66,29 @@ function Gallery({ navigate }) {
           </a>
         </div>
       </section>
+
+      {itemImage && (
+        <div
+          className="gal-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Piece ${itemIndex + 1}`}
+          onClick={closeItem}
+        >
+          <button
+            type="button"
+            className="gal-lightbox__close"
+            onClick={(e) => { e.stopPropagation(); closeItem(); }}
+            aria-label="Close"
+          >×</button>
+          <img
+            className="gal-lightbox__img"
+            src={itemImage}
+            alt={`${mode === 'jewelry' ? 'Jewelry' : 'Woodwork'} piece ${itemIndex + 1}`}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
