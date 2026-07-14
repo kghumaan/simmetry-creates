@@ -1,5 +1,5 @@
-/* global React, useContent, publishContent, uploadImage, smyGet, smySet,
-   SMY_DEFAULTS, SMY_ADMIN_SCHEMA, SMY_LS_KEY, Lines */
+/* global React, useContent, publishContent, uploadImage, verifyPassword,
+   smyGet, smySet, SMY_DEFAULTS, SMY_ADMIN_SCHEMA, Lines */
 
 /* =========================================================================
    Admin — #/admin. Password-gated editor for every image and every piece
@@ -7,11 +7,13 @@
    /api/content when the API is configured (see api/ + ADMIN.md).
    ========================================================================= */
 
-const ADMIN_PASSWORD = '1111'; // client-side gate; the API checks it again server-side
+// Offline fallback only: when the publishing API is deployed, the password is
+// checked server-side (ADMIN_PASSWORD env var) and this constant is ignored.
+const ADMIN_PASSWORD = '1111';
 
 function AdminPage({ navigate }) {
   const [password, setPassword] = React.useState(() => sessionStorage.getItem('smy.admin.pw') || '');
-  const authed = password === ADMIN_PASSWORD;
+  const authed = password !== '';
 
   if (!authed) {
     return <AdminGate onUnlock={(pw) => {
@@ -28,10 +30,17 @@ function AdminPage({ navigate }) {
 function AdminGate({ onUnlock }) {
   const [value, setValue] = React.useState('');
   const [error, setError] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
 
-  const submit = (e) => {
+  // The server is the authority when it exists; the hardcoded constant only
+  // gates offline/local preview, where nothing can be published anyway.
+  const submit = async (e) => {
     e.preventDefault();
-    if (value === ADMIN_PASSWORD) onUnlock(value);
+    if (checking) return;
+    setChecking(true);
+    const res = await verifyPassword(value);
+    setChecking(false);
+    if (res === 'ok' || (res === 'no-api' && value === ADMIN_PASSWORD)) onUnlock(value);
     else setError(true);
   };
 
@@ -55,8 +64,8 @@ function AdminGate({ onUnlock }) {
           />
         </label>
         {error && <p className="adm-error">That is not the password. Try again.</p>}
-        <button type="submit" className="smy-cta smy-cta--solid">
-          Enter the studio <span className="smy-cta__arrow">→</span>
+        <button type="submit" className="smy-cta smy-cta--solid" disabled={checking}>
+          {checking ? 'Checking…' : 'Enter the studio'} <span className="smy-cta__arrow">→</span>
         </button>
       </form>
     </div>
@@ -72,6 +81,11 @@ function AdminEditor({ password, navigate, onLock }) {
   const [busy, setBusy] = React.useState(false);
   const [status, setStatus] = React.useState(null); // { kind: 'ok'|'warn'|'err', text }
 
+  // Mirror of the latest draft, so an awaited save can tell whether more
+  // edits arrived while the request was in flight.
+  const draftRef = React.useRef(draft);
+  React.useEffect(() => { draftRef.current = draft; }, [draft]);
+
   // If the published content arrives after mount and nothing was touched yet,
   // adopt it as the starting point.
   React.useEffect(() => {
@@ -83,22 +97,42 @@ function AdminEditor({ password, navigate, onLock }) {
     setDirty(true);
     setStatus(null);
   };
-  const setField = (path, value) => edit(d => smySet(d, path, value));
+  // `value` may be a plain value or an updater fn of the current value, so
+  // async flows (photo uploads) can't clobber edits made while they ran.
+  const setField = (path, value) => edit(d => {
+    const next = typeof value === 'function' ? value(smyGet(d, path)) : value;
+    return smySet(d, path, next);
+  });
 
   const save = async () => {
+    const snapshot = draft;
     setBusy(true);
     setStatus(null);
-    const res = await publishContent(draft, password);
+    const res = await publishContent(snapshot, password);
     setBusy(false);
     if (!res.ok) { setStatus({ kind: 'err', text: res.error }); return; }
-    applyContent(draft);
-    setDirty(false);
+    applyContent(snapshot);
+    // Edits made while the save was in flight stay unsaved — don't mark clean.
+    if (draftRef.current === snapshot) setDirty(false);
     setStatus(res.remote
       ? { kind: 'ok', text: 'Published. The changes are live for every visitor.' }
       : { kind: 'warn', text: 'Saved on this device only. The publishing API is not set up yet, so other visitors will not see these changes — see ADMIN.md.' });
   };
 
   const discard = () => { setDraft(content); setDirty(false); setStatus(null); };
+
+  // Don't offer editing until we know whether published content exists —
+  // editing a defaults-based draft and saving it would clobber the live site.
+  if (source === 'loading') {
+    return (
+      <div className="adm">
+        <div className="adm-container">
+          <span className="caption caption--accent">— Studio admin</span>
+          <p className="adm-note" style={{ marginTop: 16 }}>Fetching the latest published content…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="adm">
@@ -183,10 +217,11 @@ function AdminEditor({ password, navigate, onLock }) {
         ))}
 
         <ResetSection onReset={() => {
-          localStorage.removeItem(SMY_LS_KEY);
+          // Only the draft resets here; nothing stored is touched until
+          // “Save & publish”, so backing out with “Discard changes” is safe.
           setDraft(SMY_DEFAULTS);
           setDirty(true);
-          setStatus({ kind: 'warn', text: 'Everything is back to the original text and photographs. Press “Save & publish” to make it stick.' });
+          setStatus({ kind: 'warn', text: 'Everything is back to the original text and photographs. Press “Save & publish” to make it stick, or “Discard changes” to keep things as they were.' });
         }} />
       </div>
 
@@ -235,18 +270,21 @@ function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
     if (!files || !files.length) return;
     setAdding(true); onBusy(true); setNote(null);
     const added = [];
+    const failures = [];
     let inlineCount = 0;
     for (const file of files) {
       try {
         const { url, remote } = await uploadImage(file, password);
         added.push(url);
         if (!remote) inlineCount++;
-      } catch {
-        setNote(`Could not read “${file.name}” — skipped.`);
+      } catch (err) {
+        failures.push(`“${file.name}”: ${err && err.message ? err.message : 'could not be read.'}`);
       }
     }
-    if (added.length) onChange([...list, ...added]);
-    if (inlineCount) setNote('New photographs are stored inside the page for now (the upload API is not set up). They will still publish with “Save & publish”.');
+    // Functional update: removes/reorders done while uploads ran are kept.
+    if (added.length) onChange(cur => [...(cur || []), ...added]);
+    if (failures.length) setNote(failures.join(' '));
+    else if (inlineCount) setNote('New photographs are stored inside the page for now (the upload API is not set up). They will still publish with “Save & publish”.');
     setAdding(false); onBusy(false);
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -300,14 +338,17 @@ function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
 function PortraitEditor({ title, hint, src, password, onChange, onBusy }) {
   const inputRef = React.useRef(null);
   const [adding, setAdding] = React.useState(false);
+  const [note, setNote] = React.useState(null);
 
   const replace = async (file) => {
     if (!file) return;
-    setAdding(true); onBusy(true);
+    setAdding(true); onBusy(true); setNote(null);
     try {
       const { url } = await uploadImage(file, password);
       onChange(url);
-    } catch { /* unreadable file — keep current portrait */ }
+    } catch (err) {
+      setNote(err && err.message ? err.message : 'That photograph could not be read — the current one is unchanged.');
+    }
     setAdding(false); onBusy(false);
     if (inputRef.current) inputRef.current.value = '';
   };
@@ -340,6 +381,7 @@ function PortraitEditor({ title, hint, src, password, onChange, onBusy }) {
           <img src={src} alt="Current portrait" />
         </figure>
       </div>
+      {note && <p className="adm-note">{note}</p>}
     </section>
   );
 }

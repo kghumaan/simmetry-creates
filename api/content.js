@@ -32,10 +32,12 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST') {
-    const { password, content } = req.body || {};
+    const { password, content, verifyOnly } = req.body || {};
     if (password !== (process.env.ADMIN_PASSWORD || '1111')) {
       return res.status(401).json({ error: 'bad-password' });
     }
+    // Password check for the admin gate — works even before Blob is set up.
+    if (verifyOnly) return res.status(200).json({ ok: true, verified: true });
     if (!configured) return res.status(503).json({ error: 'blob-not-configured' });
     if (!content || typeof content !== 'object') {
       return res.status(400).json({ error: 'bad-content' });

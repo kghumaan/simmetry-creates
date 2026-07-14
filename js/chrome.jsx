@@ -141,6 +141,9 @@ function useRoute() {
 
 function TopNav({ route, navigate }) {
   const { mode, setMode } = useMode();
+  // Hide the Contact link when the admin has emptied the whole inquiry
+  // section — otherwise it points at an anchor that no longer exists.
+  const contactVisible = smyInquiryVisible(useContent().content.about);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
@@ -248,11 +251,13 @@ function TopNav({ route, navigate }) {
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
-            <a className="smy-navlink"
-               href={'#' + modePrefix(mode) + '/about#contact'}
-               onClick={goContact}>
-              Contact
-            </a>
+            {contactVisible && (
+              <a className="smy-navlink"
+                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 onClick={goContact}>
+                Contact
+              </a>
+            )}
           </nav>
 
           <button
@@ -306,11 +311,13 @@ function TopNav({ route, navigate }) {
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
-            <a className="smy-panel__link"
-               href={'#' + modePrefix(mode) + '/about#contact'}
-               onClick={goContact}>
-              Contact
-            </a>
+            {contactVisible && (
+              <a className="smy-panel__link"
+                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 onClick={goContact}>
+                Contact
+              </a>
+            )}
           </nav>
         </div>
       </div>
@@ -359,7 +366,8 @@ function Footer({ navigate }) {
     {
       heading: F.studioHeading,
       rows: [
-        { label: F.email, mailto: true },
+        // Only link mailto: when the text actually is a bare email address.
+        { label: F.email, mailto: /^\S+@\S+\.\S+$/.test(String(F.email || '').trim()) },
         { label: F.location },
         { label: F.hours },
       ],
@@ -385,7 +393,7 @@ function Footer({ navigate }) {
                 {col.rows.map((r, ri) => (
                   <li key={ri}>
                     {r.mailto
-                      ? <a href={'mailto:' + r.label}>{r.label}</a>
+                      ? <a href={'mailto:' + String(r.label).trim()}>{r.label}</a>
                       : r.href
                         ? <a href={'#' + r.href} onClick={go(r.href)}>{r.label}</a>
                         : <a href="#">{r.label}</a>}

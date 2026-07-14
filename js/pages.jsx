@@ -1,4 +1,4 @@
-/* global React, useMode, useContent, Lines, smyHas, Tile, Emblem, Reveal */
+/* global React, useMode, useContent, Lines, smyHas, smyInquiryVisible, Tile, Emblem, Reveal */
 
 /* =========================================================================
    Gallery — collection grid, driven by the editable content store.
@@ -145,7 +145,8 @@ function About({ navigate }) {
     { label: A.emailLabel, value: A.emailValue },
     { label: A.diaryLabel, value: A.diaryValue, num: true },
   ].filter(m => smyHas(m.label, m.value));
-  const showInquiry = smyHas(A.inquiryEyebrow, A.inquiryTitle, A.inquiryLede) || metaBlocks.length > 0;
+  // Shared with TopNav so the Contact link disappears along with the section.
+  const showInquiry = smyInquiryVisible(A);
 
   return (
     <div className="ab">
