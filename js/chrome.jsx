@@ -141,6 +141,9 @@ function useRoute() {
 
 function TopNav({ route, navigate }) {
   const { mode, setMode } = useMode();
+  // Hide the Contact link when the admin has emptied the whole inquiry
+  // section — otherwise it points at an anchor that no longer exists.
+  const contactVisible = smyInquiryVisible(useContent().content.about);
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
@@ -248,11 +251,13 @@ function TopNav({ route, navigate }) {
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
-            <a className="smy-navlink"
-               href={'#' + modePrefix(mode) + '/about#contact'}
-               onClick={goContact}>
-              Contact
-            </a>
+            {contactVisible && (
+              <a className="smy-navlink"
+                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 onClick={goContact}>
+                Contact
+              </a>
+            )}
           </nav>
 
           <button
@@ -306,11 +311,13 @@ function TopNav({ route, navigate }) {
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
-            <a className="smy-panel__link"
-               href={'#' + modePrefix(mode) + '/about#contact'}
-               onClick={goContact}>
-              Contact
-            </a>
+            {contactVisible && (
+              <a className="smy-panel__link"
+                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 onClick={goContact}>
+                Contact
+              </a>
+            )}
           </nav>
         </div>
       </div>
@@ -319,6 +326,7 @@ function TopNav({ route, navigate }) {
 }
 
 function currentSection(route) {
+  if (/^\/admin(\/|$)/.test(route)) return 'admin';
   if (route.endsWith('/about')) return 'about';
   // Home + any mode root is the gallery
   return 'gallery';
@@ -330,8 +338,44 @@ function currentSection(route) {
 
 function Footer({ navigate }) {
   const { mode } = useMode();
+  const F = useContent().content.footer;
   const wwHref = '/ww';
   const aboutHref = (mode === 'woodwork' ? '/ww' : '/jewelry') + '/about';
+
+  const go = (href) => (e) => { e.preventDefault(); navigate(href); };
+
+  // Emptied fields drop their row; a column with no heading and no rows
+  // drops entirely. Links get an href; plain lines don't.
+  const columns = [
+    {
+      heading: F.workHeading,
+      rows: [
+        { label: F.workJewelry, href: '/jewelry' },
+        { label: F.workWoodwork, href: wwHref },
+        { label: F.workStudio, href: aboutHref },
+      ],
+    },
+    {
+      heading: F.practiceHeading,
+      rows: [
+        { label: F.practiceAbout, href: aboutHref },
+        { label: F.practiceProcess, href: aboutHref },
+        { label: F.practiceCommission, href: aboutHref },
+      ],
+    },
+    {
+      heading: F.studioHeading,
+      rows: [
+        // Only link mailto: when the text actually is a bare email address.
+        { label: F.email, mailto: /^\S+@\S+\.\S+$/.test(String(F.email || '').trim()) },
+        { label: F.location },
+        { label: F.hours },
+      ],
+    },
+  ]
+    .map(col => ({ ...col, rows: col.rows.filter(r => smyHas(r.label)) }))
+    .filter(col => smyHas(col.heading) || col.rows.length > 0);
+
   return (
     <footer className="smy-footer">
       <div className="smy-container">
@@ -340,40 +384,32 @@ function Footer({ navigate }) {
             <div className="smy-footer__brand">
               Simmetry<span className="dot">.</span>Creates
             </div>
-            <p className="smy-footer__tagline">
-              Quiet objects, made slowly. A studio practice in fine jewelry and bespoke woodwork.
-            </p>
+            {smyHas(F.tagline) && <p className="smy-footer__tagline"><Lines text={F.tagline} /></p>}
           </div>
-          <div className="smy-footer__col">
-            <h6>Work</h6>
-            <ul>
-              <li><a href="#/jewelry" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>Jewelry</a></li>
-              <li><a href={'#' + wwHref} onClick={e => { e.preventDefault(); navigate(wwHref); }}>Woodwork</a></li>
-              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Studio</a></li>
-            </ul>
-          </div>
-          <div className="smy-footer__col">
-            <h6>Practice</h6>
-            <ul>
-              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>About Ashish</a></li>
-              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Process</a></li>
-              <li><a href={'#' + aboutHref} onClick={e => { e.preventDefault(); navigate(aboutHref); }}>Begin a commission</a></li>
-            </ul>
-          </div>
-          <div className="smy-footer__col">
-            <h6>Studio</h6>
-            <ul>
-              <li><a href="mailto:studio@simmetry.creates">studio@simmetry.creates</a></li>
-              <li><a href="#">Mill Valley, California</a></li>
-              <li><a href="#">By appointment</a></li>
-            </ul>
-          </div>
+          {columns.map((col, ci) => (
+            <div key={ci} className="smy-footer__col">
+              {smyHas(col.heading) && <h6>{col.heading}</h6>}
+              <ul>
+                {col.rows.map((r, ri) => (
+                  <li key={ri}>
+                    {r.mailto
+                      ? <a href={'mailto:' + String(r.label).trim()}>{r.label}</a>
+                      : r.href
+                        ? <a href={'#' + r.href} onClick={go(r.href)}>{r.label}</a>
+                        : <a href="#">{r.label}</a>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="smy-footer__base">
-          <span>© 2026 Ashish Savani · All work shown is one of one</span>
-          <span>The studio observes a quiet month each January</span>
-        </div>
+        {smyHas(F.baseLeft, F.baseRight) && (
+          <div className="smy-footer__base">
+            <span>{smyHas(F.baseLeft) ? F.baseLeft : ''}</span>
+            <span>{smyHas(F.baseRight) ? F.baseRight : ''}</span>
+          </div>
+        )}
       </div>
     </footer>
   );

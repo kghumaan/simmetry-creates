@@ -1,5 +1,5 @@
-/* global React, ReactDOM, ModeProvider, TopNav, Footer, useRoute, currentSection,
-   useMode, LandingA, LandingB, LandingC, Gallery, About,
+/* global React, ReactDOM, ModeProvider, ContentProvider, TopNav, Footer, useRoute,
+   currentSection, useMode, LandingA, LandingB, LandingC, Gallery, About, AdminPage,
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
@@ -30,15 +30,24 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;
 function App() {
   const [route, navigate] = useRoute();
   useTweaks(TWEAK_DEFAULTS);
+  const isAdmin = currentSection(route) === 'admin';
 
   return (
-    <ModeProvider>
-      <TopNav route={route} navigate={navigate} />
-      <main className="smy-page">
-        <PageRouter navigate={navigate} route={route} />
-        <Footer navigate={navigate} />
-      </main>
-    </ModeProvider>
+    <ContentProvider>
+      <ModeProvider>
+        {!isAdmin && <TopNav route={route} navigate={navigate} />}
+        <main className="smy-page">
+          {isAdmin
+            ? <AdminPage navigate={navigate} />
+            : (
+              <>
+                <PageRouter navigate={navigate} route={route} />
+                <Footer navigate={navigate} />
+              </>
+            )}
+        </main>
+      </ModeProvider>
+    </ContentProvider>
   );
 }
 
