@@ -47,6 +47,19 @@ function smyLoadLocal() {
   catch { return null; }
 }
 
+/* Content saved before the clean-URL migration holds relative image paths
+   ('uploads/…', 'assets/…') that break on nested routes — root them. */
+function smyAbsolutizePaths(c) {
+  const fix = (v) => typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
+  if (c && c.images) {
+    for (const k of Object.keys(c.images)) {
+      if (Array.isArray(c.images[k])) c.images[k] = c.images[k].map(fix);
+    }
+  }
+  if (c && c.about) c.about.portrait = fix(c.about.portrait);
+  return c;
+}
+
 async function smyFetchRemote() {
   try {
     const r = await fetch('/api/content?ts=' + Date.now(), { cache: 'no-store' });
@@ -144,7 +157,7 @@ async function smyShrinkImage(file, maxDim = 1600, quality = 0.85) {
 
 function ContentProvider({ children }) {
   const [content, setContentState] = React.useState(() =>
-    smyDeepMerge(SMY_DEFAULTS, smyLoadLocal() || {}));
+    smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, smyLoadLocal() || {})));
   // 'loading' → then 'live' (API serving published content) or 'local'
   const [source, setSource] = React.useState('loading');
 
@@ -153,7 +166,7 @@ function ContentProvider({ children }) {
     smyFetchRemote().then(remote => {
       if (cancelled) return;
       if (remote) {
-        setContentState(smyDeepMerge(SMY_DEFAULTS, remote));
+        setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, remote)));
         setSource('live');
       } else {
         setSource('local');
@@ -163,7 +176,7 @@ function ContentProvider({ children }) {
   }, []);
 
   const applyContent = React.useCallback((next) => {
-    setContentState(smyDeepMerge(SMY_DEFAULTS, next));
+    setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, next)));
   }, []);
 
   const value = React.useMemo(

@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    { "source": "/", "destination": "/jewelry", "permanent": false },
+    { "source": "/ww", "destination": "/woodwork", "permanent": true },
+    { "source": "/ww/:path*", "destination": "/woodwork/:path*", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}

@@ -51,7 +51,7 @@ function Gallery({ navigate, route }) {
 
       <section className="smy-container gal-grid">
         {images.map((src, i) => {
-          const href = '#' + prefix + '/' + i;
+          const href = prefix + '/' + i;
           return (
             <Reveal key={src + i} delay={(i % 6) * 50} className="gal-card">
               <a
@@ -71,7 +71,7 @@ function Gallery({ navigate, route }) {
         <section className="smy-container gal-end">
           <hr className="smy-rule" />
           <div className="gal-end__row">
-            <a className="smy-cta smy-cta--solid" href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+            <a className="smy-cta smy-cta--solid" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
               {G.ctaLabel} <span className="smy-cta__arrow">→</span>
             </a>
           </div>

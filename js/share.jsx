@@ -1,9 +1,9 @@
 /* =========================================================================
    Link-share preview — keeps document.title and OG/Twitter meta tags in sync
-   with the current hash route, so shared links show the right title + image.
+   with the current path, so shared links show the right title + image.
 
-   Note: most social-network scrapers don't execute JS and never see the hash,
-   so the values rendered into index.html are what they'll usually pick up.
+   Note: most social-network scrapers don't execute JS, so the values baked
+   into index.html are what they'll usually pick up regardless of path.
    This updater is for in-app title changes and JS-aware crawlers.
    ========================================================================= */
 
@@ -55,27 +55,27 @@
       return {
         title: SITE + ' — About',
         desc:  'Ashish Savani — one bench, two crafts.',
-        image: (data.ABOUT_IMAGE) || 'assets/emblem-jewelry.png',
+        image: (data.ABOUT_IMAGE) || '/assets/emblem-jewelry.png',
       };
     }
     if (wwAny) {
       return {
         title: SITE + ' — Woodwork',
         desc:  'Bespoke woodwork, made slowly.',
-        image: 'assets/emblem-woodwork.png',
+        image: '/assets/emblem-woodwork.png',
       };
     }
     if (jwAny) {
       return {
         title: SITE + ' — Jewelry',
         desc:  'Fine jewelry, made slowly.',
-        image: 'assets/emblem-jewelry.png',
+        image: '/assets/emblem-jewelry.png',
       };
     }
     return {
       title: SITE,
       desc:  HOME_DESC,
-      image: 'assets/emblem-jewelry.png',
+      image: '/assets/emblem-jewelry.png',
     };
   }
 
@@ -94,10 +94,11 @@
   }
 
   function currentRoute() {
-    return (window.location.hash || '#/').replace(/^#/, '') || '/';
+    return window.location.pathname || '/';
   }
 
   apply(currentRoute());
-  window.addEventListener('hashchange', () => apply(currentRoute()));
+  // pushState fires no event; useRoute() calls SMY_updateShareMeta directly.
+  window.addEventListener('popstate', () => apply(currentRoute()));
   window.SMY_updateShareMeta = () => apply(currentRoute());
 })();
