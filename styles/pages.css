@@ -616,3 +616,12 @@
 
 /* ---------- Variant chooser (Tweaks) ------------------------------------ */
 .tw-section + .tw-section { margin-top: 16px; }
+
+/* Inquiry form — send failure notice */
+.ab-form__error {
+  margin: 16px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--error);
+}
+.ab-form .smy-cta:disabled { opacity: 0.5; cursor: default; }

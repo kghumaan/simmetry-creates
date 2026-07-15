@@ -31,6 +31,29 @@ Publishing needs a Vercel Blob store connected to the project:
 Until that's done, the admin panel still works but saves to the current browser
 only, and it says so in the save bar.
 
+## Contact form email
+
+Inquiries submitted on the About page are emailed (with name, email, project
+type, and message) to **simmetry.creates@gmail.com** by `api/inquiry.js`,
+using [Resend](https://resend.com). One-time setup:
+
+1. Create a free Resend account **with simmetry.creates@gmail.com**
+   (free tier: 100 emails/day — plenty).
+2. Resend dashboard → API Keys → Create → copy the key.
+3. Vercel → project → Settings → Environment Variables →
+   add `RESEND_API_KEY` = the key → redeploy.
+
+Until a custom domain is verified in Resend, mail is sent from
+`onboarding@resend.dev`, which only delivers to the Resend account owner's
+address — that's exactly the studio Gmail, so it works out of the box.
+Optional polish: verify `simmetrycreates.com` in Resend, then set
+`INQUIRY_FROM` to e.g. `Simmetry.Creates <studio@simmetrycreates.com>`.
+`INQUIRY_TO` overrides the recipient. Replying to an alert replies straight
+to the person who wrote (their address is the reply-to).
+
+If the key isn't set (or sending fails), the form tells the visitor to email
+the studio directly — nothing is silently dropped.
+
 ## Changing the password
 
 Set the `ADMIN_PASSWORD` environment variable in Vercel (falls back to `1111`)
