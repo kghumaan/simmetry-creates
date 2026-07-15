@@ -76,6 +76,28 @@ function smyMigrateContent(c) {
       }
     }
   }
+  // Flat bio1/step1 fields became bios[]/steps[] arrays.
+  if (out.about) {
+    const a = { ...out.about };
+    if (!a.bios && (a.bio1Label || a.bio1 || a.bio2Label || a.bio2 || a.bio3Label || a.bio3)) {
+      a.bios = [
+        { label: a.bio1Label || '', body: a.bio1 || '' },
+        { label: a.bio2Label || '', body: a.bio2 || '' },
+        { label: a.bio3Label || '', body: a.bio3 || '' },
+      ];
+    }
+    if (!a.steps && (a.step1Title || a.step1Body || a.step2Title || a.step2Body || a.step3Title)) {
+      a.steps = [
+        { title: a.step1Title || '', body: a.step1Body || '' },
+        { title: a.step2Title || '', body: a.step2Body || '' },
+        { title: a.step3Title || '', body: a.step3BodyJewelry || a.step3BodyWoodwork || '' },
+      ];
+    }
+    ['bio1Label', 'bio1', 'bio2Label', 'bio2', 'bio3Label', 'bio3',
+     'step1Title', 'step1Body', 'step2Title', 'step2Body',
+     'step3Title', 'step3BodyJewelry', 'step3BodyWoodwork'].forEach(k => delete a[k]);
+    out.about = a;
+  }
   return out;
 }
 
@@ -258,7 +280,8 @@ function Lines({ text }) {
 }
 
 Object.assign(window, {
-  ContentProvider, useContent, Lines,
+  ContentProvider, ContentContext, useContent, Lines,
   publishContent, uploadImage, verifyPassword,
-  smyDeepMerge, smyGet, smySet, smyHas, smyInquiryVisible, SMY_LS_KEY,
+  smyDeepMerge, smyGet, smySet, smyHas, smyInquiryVisible,
+  smyResolveContent, SMY_LS_KEY,
 });

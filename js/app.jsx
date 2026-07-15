@@ -1,5 +1,6 @@
-/* global React, ReactDOM, ModeProvider, ContentProvider, TopNav, Footer, useRoute,
-   currentSection, useMode, LandingA, LandingB, LandingC, Gallery, ProductPage, About, AdminPage,
+/* global React, ReactDOM, ModeProvider, ContentProvider, EditProvider, EditBar,
+   TopNav, Footer, useRoute, currentSection, useMode, LandingA, LandingB, LandingC,
+   Gallery, ProductPage, About, AdminPage,
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
@@ -35,19 +36,22 @@ function App() {
 
   return (
     <ContentProvider>
-      <ModeProvider>
-        {!isAdmin && <TopNav route={route} navigate={navigate} />}
-        <main className="smy-page">
-          {isAdmin
-            ? <AdminPage navigate={navigate} />
-            : (
-              <>
-                <PageRouter navigate={navigate} route={route} />
-                <Footer navigate={navigate} />
-              </>
-            )}
-        </main>
-      </ModeProvider>
+      <EditProvider>
+        <ModeProvider>
+          {!isAdmin && <TopNav route={route} navigate={navigate} />}
+          <main className="smy-page">
+            {isAdmin
+              ? <AdminPage navigate={navigate} />
+              : (
+                <>
+                  <PageRouter navigate={navigate} route={route} />
+                  <Footer navigate={navigate} />
+                </>
+              )}
+          </main>
+          <EditBar />
+        </ModeProvider>
+      </EditProvider>
     </ContentProvider>
   );
 }

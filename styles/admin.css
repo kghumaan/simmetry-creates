@@ -224,3 +224,110 @@
 @media (max-width: 640px) {
   .adm-detailrow { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+   In-place edit mode (js/edit.jsx) — controls drawn over the live pages
+   ========================================================================= */
+
+.e-text {
+  outline: none;
+  border-radius: 1px;
+  box-shadow: 0 0 0 0 transparent;
+  transition: box-shadow 150ms var(--ease), background-color 150ms var(--ease);
+  cursor: text;
+  min-width: 1ch;
+  display: inline-block;
+}
+.e-text:hover {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 55%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
+}
+.e-text:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+.e-text:empty::before {
+  content: attr(data-ph);
+  opacity: 0.45;
+  font-style: italic;
+}
+
+.e-btn {
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 2px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.e-btn:hover { border-color: var(--accent); }
+.e-btn--danger { color: var(--error); }
+.e-btn--label { padding: 6px 12px; }
+.e-btn:disabled { opacity: 0.5; cursor: default; }
+
+.e-row { margin-top: 12px; }
+
+/* Gallery card controls + add tile */
+.gal-card { position: relative; }
+.e-cardbar {
+  position: absolute;
+  left: 8px; right: 8px; bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 8px;
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
+  border: 1px solid var(--hairline);
+  font-size: 12px;
+}
+.e-cardbar .e-btn { margin-left: 0; }
+.e-addtile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 260px;
+  border: 1px dashed color-mix(in oklab, var(--accent) 60%, var(--hairline));
+  padding: 24px;
+  text-align: center;
+}
+.e-addtile__hint {
+  font-size: 13px;
+  color: var(--fg-muted);
+  max-width: 24ch;
+}
+
+/* Product page edit bits */
+.pd-thumbwrap { position: relative; display: inline-flex; align-items: flex-start; }
+.pd-thumbwrap .e-btn {
+  position: absolute;
+  top: -8px; right: -8px;
+  margin: 0;
+  padding: 2px 6px;
+}
+.pd-thumbwrap--add {
+  display: inline-flex;
+  align-items: center;
+  min-height: 90px;
+}
+.pd-spec dd .e-btn { margin-left: 10px; }
+
+/* Sent-state preview inside the form while editing */
+.e-sentpreview {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Keep the fixed bar from covering the footer while editing */
+.e-bar + * { padding-bottom: 0; }
+html.is-editing body { padding-bottom: 76px; }

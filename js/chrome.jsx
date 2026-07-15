@@ -1,4 +1,4 @@
-/* global React */
+/* global React, useContent, useEdit, E, Lines, smyHas, smyInquiryVisible */
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 /* =========================================================================
@@ -152,7 +152,8 @@ function TopNav({ route, navigate }) {
   const { mode, setMode } = useMode();
   // Hide the Contact link when the admin has emptied the whole inquiry
   // section — otherwise it points at an anchor that no longer exists.
-  const contactVisible = smyInquiryVisible(useContent().content.about);
+  // (Always visible in edit mode so the section can be brought back.)
+  const contactVisible = smyInquiryVisible(useContent().content.about) || useEdit().active;
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
@@ -349,42 +350,44 @@ function currentSection(route) {
 function Footer({ navigate }) {
   const { mode } = useMode();
   const F = useContent().content.footer;
+  const editing = useEdit().active;
   const wwHref = '/woodwork';
   const aboutHref = (mode === 'woodwork' ? '/woodwork' : '/jewelry') + '/about';
 
   const go = (href) => (e) => { e.preventDefault(); navigate(href); };
 
   // Emptied fields drop their row; a column with no heading and no rows
-  // drops entirely. Links get an href; plain lines don't.
+  // drops entirely. In edit mode everything stays, with placeholders.
+  // Links get an href; plain lines don't.
   const columns = [
     {
-      heading: F.workHeading,
+      heading: F.workHeading, headingPath: 'footer.workHeading',
       rows: [
-        { label: F.workJewelry, href: '/jewelry' },
-        { label: F.workWoodwork, href: wwHref },
-        { label: F.workStudio, href: aboutHref },
+        { label: F.workJewelry, path: 'footer.workJewelry', href: '/jewelry' },
+        { label: F.workWoodwork, path: 'footer.workWoodwork', href: wwHref },
+        { label: F.workStudio, path: 'footer.workStudio', href: aboutHref },
       ],
     },
     {
-      heading: F.practiceHeading,
+      heading: F.practiceHeading, headingPath: 'footer.practiceHeading',
       rows: [
-        { label: F.practiceAbout, href: aboutHref },
-        { label: F.practiceProcess, href: aboutHref },
-        { label: F.practiceCommission, href: aboutHref },
+        { label: F.practiceAbout, path: 'footer.practiceAbout', href: aboutHref },
+        { label: F.practiceProcess, path: 'footer.practiceProcess', href: aboutHref },
+        { label: F.practiceCommission, path: 'footer.practiceCommission', href: aboutHref },
       ],
     },
     {
-      heading: F.studioHeading,
+      heading: F.studioHeading, headingPath: 'footer.studioHeading',
       rows: [
         // Only link mailto: when the text actually is a bare email address.
-        { label: F.email, mailto: /^\S+@\S+\.\S+$/.test(String(F.email || '').trim()) },
-        { label: F.location },
-        { label: F.hours },
+        { label: F.email, path: 'footer.email', mailto: /^\S+@\S+\.\S+$/.test(String(F.email || '').trim()) },
+        { label: F.location, path: 'footer.location' },
+        { label: F.hours, path: 'footer.hours' },
       ],
     },
   ]
-    .map(col => ({ ...col, rows: col.rows.filter(r => smyHas(r.label)) }))
-    .filter(col => smyHas(col.heading) || col.rows.length > 0);
+    .map(col => ({ ...col, rows: col.rows.filter(r => editing || smyHas(r.label)) }))
+    .filter(col => editing || smyHas(col.heading) || col.rows.length > 0);
 
   return (
     <footer className="smy-footer">
@@ -394,19 +397,23 @@ function Footer({ navigate }) {
             <div className="smy-footer__brand">
               Simmetry<span className="dot">.</span>Creates
             </div>
-            {smyHas(F.tagline) && <p className="smy-footer__tagline"><Lines text={F.tagline} /></p>}
+            {(editing || smyHas(F.tagline)) && (
+              <p className="smy-footer__tagline"><E path="footer.tagline" ph="Tagline…" /></p>
+            )}
           </div>
           {columns.map((col, ci) => (
             <div key={ci} className="smy-footer__col">
-              {smyHas(col.heading) && <h6>{col.heading}</h6>}
+              {(editing || smyHas(col.heading)) && <h6><E path={col.headingPath} ph="Heading…" /></h6>}
               <ul>
                 {col.rows.map((r, ri) => (
                   <li key={ri}>
-                    {r.mailto
+                    {r.mailto && !editing
                       ? <a href={'mailto:' + String(r.label).trim()}>{r.label}</a>
-                      : r.href
+                      : r.href && !editing
                         ? <a href={r.href} onClick={go(r.href)}>{r.label}</a>
-                        : <a href="#" onClick={e => e.preventDefault()}>{r.label}</a>}
+                        : editing
+                          ? <a href="#" onClick={e => e.preventDefault()}><E path={r.path} ph="Line…" /></a>
+                          : <a href="#" onClick={e => e.preventDefault()}>{r.label}</a>}
                   </li>
                 ))}
               </ul>
@@ -414,10 +421,10 @@ function Footer({ navigate }) {
           ))}
         </div>
 
-        {smyHas(F.baseLeft, F.baseRight) && (
+        {(editing || smyHas(F.baseLeft, F.baseRight)) && (
           <div className="smy-footer__base">
-            <span>{smyHas(F.baseLeft) ? F.baseLeft : ''}</span>
-            <span>{smyHas(F.baseRight) ? F.baseRight : ''}</span>
+            <span>{editing ? <E path="footer.baseLeft" ph="Bottom line, left…" /> : (smyHas(F.baseLeft) ? F.baseLeft : '')}</span>
+            <span>{editing ? <E path="footer.baseRight" ph="Bottom line, right…" /> : (smyHas(F.baseRight) ? F.baseRight : '')}</span>
           </div>
         )}
       </div>
