@@ -194,3 +194,33 @@
 .adm-status--ok { color: #3f6c3a; }
 .adm-status--warn { color: #8a6a2f; }
 .adm-status--err { color: var(--error); }
+
+/* ---------- Per-piece product details panel -------------------------------- */
+.adm-thumb.is-selected { border-color: var(--accent); }
+.adm-product {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, var(--hairline));
+  background: color-mix(in oklab, var(--accent) 6%, var(--surface));
+}
+.adm-product__h {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px;
+  margin: 0 0 8px;
+}
+.adm-detailblock { margin-top: 20px; }
+.adm-detailblock .smy-field__label { display: block; margin-bottom: 8px; }
+.adm-detailrow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.adm-detailrow .adm-thumb__x {
+  border: 0; background: none; cursor: pointer; font-size: 16px;
+}
+@media (max-width: 640px) {
+  .adm-detailrow { grid-template-columns: 1fr; }
+}

@@ -625,3 +625,96 @@
   color: var(--error);
 }
 .ab-form .smy-cta:disabled { opacity: 0.5; cursor: default; }
+
+/* =========================================================================
+   Product page (/jewelry/3, /woodwork/0)
+   ========================================================================= */
+
+.pd { padding-bottom: 96px; }
+.pd-crumb { padding-top: 24px; }
+.pd-back {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.pd-back:hover { color: var(--fg); }
+
+.pd-main {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 64px;
+  align-items: start;
+  padding-top: 32px;
+}
+
+.pd-media { min-width: 0; }
+
+.pd-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.pd-thumb {
+  padding: 0;
+  border: 1px solid var(--hairline);
+  background: var(--photo-ground);
+  cursor: pointer;
+  width: 72px;
+  height: 90px;
+  overflow: hidden;
+  opacity: 0.75;
+  transition: opacity 200ms var(--ease), border-color 200ms var(--ease);
+}
+.pd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pd-thumb:hover { opacity: 1; }
+.pd-thumb.is-active { opacity: 1; border-color: var(--accent); }
+
+.pd-specs {
+  margin: 28px 0 0;
+  border-top: 1px solid var(--hairline);
+}
+.pd-spec {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--hairline);
+}
+.pd-spec dt { color: var(--fg-muted); }
+.pd-spec dd {
+  margin: 0;
+  font-size: 15px;
+  text-align: right;
+}
+.pd-spec--price dd {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.pd-info {
+  position: sticky;
+  top: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+}
+.pd-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 52px;
+  line-height: 1.08;
+  margin: 0;
+}
+.pd-desc { max-width: 44ch; }
+.pd-cta { margin-top: 8px; }
+
+@media (max-width: 860px) {
+  .pd-main {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pd-info { position: static; }
+  .pd-title { font-size: 38px; }
+}

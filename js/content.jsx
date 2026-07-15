@@ -47,22 +47,61 @@ function smyLoadLocal() {
   catch { return null; }
 }
 
-/* Content saved before the clean-URL migration holds relative image paths
-   ('uploads/…', 'assets/…') that break on nested routes — root them. */
+/* Saved content from older versions of the site needs two upgrades:
+   - images.{mode} used to be plain arrays of URL strings; they are now
+     products.{mode} arrays of objects (image, title, details, …)
+   - pre-clean-URL saves hold relative image paths that break on nested
+     routes.
+   Both run pure — deepMerge can hand back SMY_DEFAULTS subtrees by
+   reference, so mutating in place would rewrite the shared defaults. */
+
+function smyMigrateContent(c) {
+  if (!c) return c;
+  const out = { ...c };
+  if (out.images && !out.products) {
+    out.products = {};
+    for (const k of Object.keys(out.images)) {
+      if (Array.isArray(out.images[k])) {
+        out.products[k] = out.images[k].map(src => ({ image: src }));
+      }
+    }
+  }
+  delete out.images;
+  if (out.products) {
+    out.products = { ...out.products };
+    for (const k of Object.keys(out.products)) {
+      if (Array.isArray(out.products[k])) {
+        out.products[k] = out.products[k].map(p =>
+          typeof p === 'string' ? { image: p } : p);
+      }
+    }
+  }
+  return out;
+}
+
 function smyAbsolutizePaths(c) {
-  // Pure: deepMerge can hand back SMY_DEFAULTS subtrees by reference, so
-  // mutating in place would silently rewrite the shared defaults object.
   const fix = (v) => typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
   if (!c) return c;
   const out = { ...c };
-  if (out.images) {
-    out.images = { ...out.images };
-    for (const k of Object.keys(out.images)) {
-      if (Array.isArray(out.images[k])) out.images[k] = out.images[k].map(fix);
+  if (out.products) {
+    out.products = { ...out.products };
+    for (const k of Object.keys(out.products)) {
+      if (Array.isArray(out.products[k])) {
+        out.products[k] = out.products[k].map(p => ({
+          ...p,
+          image: fix(p.image),
+          images: Array.isArray(p.images) ? p.images.map(fix) : p.images,
+        }));
+      }
     }
   }
   if (out.about) out.about = { ...out.about, portrait: fix(out.about.portrait) };
   return out;
+}
+
+/* Full resolution pipeline for any loaded override. */
+function smyResolveContent(saved) {
+  return smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, smyMigrateContent(saved) || {}));
 }
 
 async function smyFetchRemote() {
@@ -162,7 +201,7 @@ async function smyShrinkImage(file, maxDim = 1600, quality = 0.85) {
 
 function ContentProvider({ children }) {
   const [content, setContentState] = React.useState(() =>
-    smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, smyLoadLocal() || {})));
+    smyResolveContent(smyLoadLocal()));
   // 'loading' → then 'live' (API serving published content) or 'local'
   const [source, setSource] = React.useState('loading');
 
@@ -171,7 +210,7 @@ function ContentProvider({ children }) {
     smyFetchRemote().then(remote => {
       if (cancelled) return;
       if (remote) {
-        setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, remote)));
+        setContentState(smyResolveContent(remote));
         setSource('live');
       } else {
         setSource('local');
@@ -181,7 +220,7 @@ function ContentProvider({ children }) {
   }, []);
 
   const applyContent = React.useCallback((next) => {
-    setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, next)));
+    setContentState(smyResolveContent(next));
   }, []);
 
   const value = React.useMemo(

@@ -6,33 +6,15 @@
    whole block is empty, the block's section is dropped entirely.
    ========================================================================= */
 
-function Gallery({ navigate, route }) {
+function Gallery({ navigate }) {
   const { mode } = useMode();
   const { content } = useContent();
-  const images = content.images[mode] || [];
+  const products = content.products[mode] || [];
   const G = content.gallery;
   const title = mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle;
   const showCount = smyHas(G.countSuffix);
   const showTitle = smyHas(title);
   const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
-
-  const itemMatch = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)\/?$/);
-  const itemIndex = itemMatch ? Math.min(images.length - 1, Math.max(0, parseInt(itemMatch[1], 10))) : null;
-  const itemImage = itemIndex !== null ? images[itemIndex] : null;
-
-  const closeItem = React.useCallback(() => navigate(prefix), [navigate, prefix]);
-
-  React.useEffect(() => {
-    if (!itemImage) return;
-    const onKey = (e) => { if (e.key === 'Escape') closeItem(); };
-    window.addEventListener('keydown', onKey);
-    const prevOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.documentElement.style.overflow = prevOverflow;
-    };
-  }, [itemImage, closeItem]);
 
   return (
     <div className="gal">
@@ -41,7 +23,7 @@ function Gallery({ navigate, route }) {
           {showCount && (
             <div className="gal-head__top">
               <span className="caption num" style={{ color: 'var(--fg-muted)' }}>
-                {images.length} {G.countSuffix}
+                {products.length} {G.countSuffix}
               </span>
             </div>
           )}
@@ -50,17 +32,17 @@ function Gallery({ navigate, route }) {
       )}
 
       <section className="smy-container gal-grid">
-        {images.map((src, i) => {
+        {products.map((p, i) => {
           const href = prefix + '/' + i;
           return (
-            <Reveal key={src + i} delay={(i % 6) * 50} className="gal-card">
+            <Reveal key={(p.image || '') + i} delay={(i % 6) * 50} className="gal-card">
               <a
                 className="gal-card__link"
                 href={href}
-                aria-label={`Open piece ${i + 1}`}
-                onClick={(e) => { e.preventDefault(); navigate(prefix + '/' + i); }}
+                aria-label={`Open ${smyHas(p.title) ? p.title : 'piece ' + (i + 1)}`}
+                onClick={(e) => { e.preventDefault(); navigate(href); }}
               >
-                <Tile kind="portrait" image={src} />
+                <Tile kind="portrait" image={p.image} />
               </a>
             </Reveal>
           );
@@ -77,29 +59,105 @@ function Gallery({ navigate, route }) {
           </div>
         </section>
       )}
+    </div>
+  );
+}
 
-      {itemImage && (
-        <div
-          className="gal-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Piece ${itemIndex + 1}`}
-          onClick={closeItem}
-        >
-          <button
-            type="button"
-            className="gal-lightbox__close"
-            onClick={(e) => { e.stopPropagation(); closeItem(); }}
-            aria-label="Close"
-          >×</button>
-          <img
-            className="gal-lightbox__img"
-            src={itemImage}
-            alt={`${mode === 'jewelry' ? 'Jewelry' : 'Woodwork'} piece ${itemIndex + 1}`}
-            onClick={(e) => e.stopPropagation()}
-          />
+/* =========================================================================
+   Product page — /jewelry/3, /woodwork/0. Main photograph plus optional
+   angles; specs and price sit under the image, title and description
+   alongside. Every field is optional — empty ones simply don't render.
+   ========================================================================= */
+
+function ProductPage({ navigate, route }) {
+  const { mode } = useMode();
+  const { content } = useContent();
+  const products = content.products[mode] || [];
+  const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
+
+  const m = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)$/);
+  const idx = m ? parseInt(m[1], 10) : -1;
+  const product = idx >= 0 && idx < products.length ? products[idx] : null;
+
+  const [active, setActive] = React.useState(0);
+  React.useEffect(() => { setActive(0); }, [route]);
+
+  // A stale or hand-typed index falls back to the gallery.
+  React.useEffect(() => {
+    if (!product) navigate(prefix);
+  }, [product, prefix]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!product) return null;
+
+  const photos = [product.image, ...(Array.isArray(product.images) ? product.images : [])]
+    .filter(src => smyHas(src));
+  const specs = (Array.isArray(product.details) ? product.details : [])
+    .filter(d => d && (smyHas(d.label) || smyHas(d.value)));
+  const num = String(idx + 1).padStart(2, '0');
+  const title = smyHas(product.title) ? product.title : `Piece No. ${num}`;
+
+  return (
+    <div className="pd">
+      <section className="smy-container pd-crumb">
+        <a className="pd-back caption" href={prefix} onClick={e => { e.preventDefault(); navigate(prefix); }}>
+          ← All {mode === 'jewelry' ? 'jewelry' : 'woodwork'}
+        </a>
+      </section>
+
+      <section className="smy-container pd-main">
+        <div className="pd-media">
+          <Tile kind="vhero" image={photos[active] || product.image} alt={title} corners />
+
+          {photos.length > 1 && (
+            <div className="pd-thumbs" role="group" aria-label="More photographs">
+              {photos.map((src, i) => (
+                <button
+                  key={src.slice(0, 80) + i}
+                  type="button"
+                  className={`pd-thumb ${i === active ? 'is-active' : ''}`}
+                  aria-label={`Photograph ${i + 1}`}
+                  aria-pressed={i === active}
+                  onClick={() => setActive(i)}
+                >
+                  <img src={src} alt="" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(specs.length > 0 || smyHas(product.price)) && (
+            <dl className="pd-specs">
+              {specs.map((d, i) => (
+                <div className="pd-spec" key={i}>
+                  <dt className="caption">{d.label}</dt>
+                  <dd>{d.value}</dd>
+                </div>
+              ))}
+              {smyHas(product.price) && (
+                <div className="pd-spec pd-spec--price">
+                  <dt className="caption">Price</dt>
+                  <dd>{product.price}</dd>
+                </div>
+              )}
+            </dl>
+          )}
         </div>
-      )}
+
+        <div className="pd-info">
+          <span className="caption caption--accent">
+            — No. {num} · {mode === 'jewelry' ? 'Jewelry' : 'Woodwork'}
+          </span>
+          <h1 className="pd-title">{title}</h1>
+          {smyHas(product.description) && (
+            <p className="smy-lede pd-desc"><Lines text={product.description} /></p>
+          )}
+          <div className="pd-cta">
+            <a className="smy-cta smy-cta--solid" href={prefix + '/about'} onClick={e => { e.preventDefault(); navigate(prefix + '/about'); }}>
+              {smyHas(content.gallery.ctaLabel) ? content.gallery.ctaLabel : 'Begin a commission'} <span className="smy-cta__arrow">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -345,4 +403,5 @@ function About({ navigate }) {
 }
 
 window.Gallery = Gallery;
+window.ProductPage = ProductPage;
 window.About = About;

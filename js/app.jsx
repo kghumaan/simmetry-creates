@@ -1,5 +1,5 @@
 /* global React, ReactDOM, ModeProvider, ContentProvider, TopNav, Footer, useRoute,
-   currentSection, useMode, LandingA, LandingB, LandingC, Gallery, About, AdminPage,
+   currentSection, useMode, LandingA, LandingB, LandingC, Gallery, ProductPage, About, AdminPage,
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
@@ -22,7 +22,8 @@ function PageRouter({ navigate, route, variant }) {
   }, [route]);
 
   if (section === 'about') return <About navigate={navigate} />;
-  return <Gallery navigate={navigate} route={route} />;
+  if (section === 'product') return <ProductPage navigate={navigate} route={route} />;
+  return <Gallery navigate={navigate} />;
 }
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;

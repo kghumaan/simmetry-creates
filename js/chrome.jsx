@@ -337,6 +337,7 @@ function TopNav({ route, navigate }) {
 function currentSection(route) {
   if (/^\/admin(\/|$)/.test(route)) return 'admin';
   if (route.endsWith('/about')) return 'about';
+  if (/^\/(jewelry|ww|woodwork)\/\d+$/.test(route)) return 'product';
   // Home + any mode root is the gallery
   return 'gallery';
 }

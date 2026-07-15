@@ -162,21 +162,21 @@ function AdminEditor({ password, navigate, onLock }) {
           </p>
         )}
 
-        <ImageListEditor
-          title="Jewelry photographs"
-          hint="These appear on the jewelry gallery, in this order."
-          list={draft.images.jewelry}
+        <ProductListEditor
+          title="Jewelry pieces"
+          hint="These appear on the jewelry gallery, in this order. Press ✎ on a piece to edit its title, details, price, and extra angle photographs."
+          list={draft.products.jewelry}
           password={password}
-          onChange={(next) => setField('images.jewelry', next)}
+          onChange={(next) => setField('products.jewelry', next)}
           onBusy={setBusy}
         />
 
-        <ImageListEditor
-          title="Woodwork photographs"
-          hint="These appear on the woodwork gallery, in this order."
-          list={draft.images.woodwork}
+        <ProductListEditor
+          title="Woodwork pieces"
+          hint="These appear on the woodwork gallery, in this order. Press ✎ on a piece to edit its title, details, price, and extra angle photographs."
+          list={draft.products.woodwork}
           password={password}
-          onChange={(next) => setField('images.woodwork', next)}
+          onChange={(next) => setField('products.woodwork', next)}
           onBusy={setBusy}
         />
 
@@ -249,12 +249,20 @@ function AdminEditor({ password, navigate, onLock }) {
   );
 }
 
-/* ---------- Image list (gallery) editor ----------------------------------- */
+/* ---------- Product list editor -------------------------------------------
+   Grid of pieces with reorder/remove/add, plus a per-piece details panel:
+   title, description, price, label/value detail lines, and optional extra
+   angle photographs. Every field is optional on the live site. ------------ */
 
-function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
+function ProductListEditor({ title, hint, list, password, onChange, onBusy }) {
   const inputRef = React.useRef(null);
+  const extraRef = React.useRef(null);
   const [adding, setAdding] = React.useState(false);
   const [note, setNote] = React.useState(null);
+  const [sel, setSel] = React.useState(null);
+
+  const patch = (i, partial) =>
+    onChange(cur => (cur || []).map((p, k) => (k === i ? { ...p, ...partial } : p)));
 
   const move = (i, dir) => {
     const j = i + dir;
@@ -262,13 +270,16 @@ function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
     const next = [...list];
     [next[i], next[j]] = [next[j], next[i]];
     onChange(next);
+    if (sel === i) setSel(j);
+    else if (sel === j) setSel(i);
   };
 
-  const remove = (i) => onChange(list.filter((_, k) => k !== i));
+  const remove = (i) => {
+    onChange(list.filter((_, k) => k !== i));
+    setSel(null);
+  };
 
-  const addFiles = async (files) => {
-    if (!files || !files.length) return;
-    setAdding(true); onBusy(true); setNote(null);
+  const uploadMany = async (files) => {
     const added = [];
     const failures = [];
     let inlineCount = 0;
@@ -281,13 +292,41 @@ function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
         failures.push(`“${file.name}”: ${err && err.message ? err.message : 'could not be read.'}`);
       }
     }
-    // Functional update: removes/reorders done while uploads ran are kept.
-    if (added.length) onChange(cur => [...(cur || []), ...added]);
     if (failures.length) setNote(failures.join(' '));
     else if (inlineCount) setNote('New photographs are stored inside the page for now (the upload API is not set up). They will still publish with “Save & publish”.');
+    return added;
+  };
+
+  const addPieces = async (files) => {
+    if (!files || !files.length) return;
+    setAdding(true); onBusy(true); setNote(null);
+    const added = await uploadMany(files);
+    // Functional update: removes/reorders done while uploads ran are kept.
+    if (added.length) onChange(cur => [
+      ...(cur || []),
+      ...added.map(url => ({ image: url, title: '', description: '', price: '', details: [], images: [] })),
+    ]);
     setAdding(false); onBusy(false);
     if (inputRef.current) inputRef.current.value = '';
   };
+
+  const addAngles = async (files) => {
+    if (!files || !files.length || sel === null) return;
+    const i = sel;
+    setAdding(true); onBusy(true); setNote(null);
+    const added = await uploadMany(files);
+    if (added.length) onChange(cur => (cur || []).map((p, k) =>
+      k === i ? { ...p, images: [...(Array.isArray(p.images) ? p.images : []), ...added] } : p));
+    setAdding(false); onBusy(false);
+    if (extraRef.current) extraRef.current.value = '';
+  };
+
+  const product = sel !== null ? list[sel] : null;
+  const details = product && Array.isArray(product.details) ? product.details : [];
+  const angles = product && Array.isArray(product.images) ? product.images : [];
+
+  const patchDetail = (di, key, value) =>
+    patch(sel, { details: details.map((d, k) => (k === di ? { ...d, [key]: value } : d)) });
 
   return (
     <section className="adm-section">
@@ -310,24 +349,101 @@ function ImageListEditor({ title, hint, list, password, onChange, onBusy }) {
           accept="image/*"
           multiple
           style={{ display: 'none' }}
-          onChange={e => addFiles(Array.from(e.target.files || []))}
+          onChange={e => addPieces(Array.from(e.target.files || []))}
         />
       </div>
 
       <div className="adm-grid">
-        {list.map((src, i) => (
-          <figure key={src.slice(0, 80) + i} className="adm-thumb">
-            <img src={src} alt="" loading="lazy" />
+        {list.map((p, i) => (
+          <figure key={(p.image || '').slice(0, 80) + i} className={`adm-thumb ${sel === i ? 'is-selected' : ''}`}>
+            <img src={p.image} alt="" loading="lazy" />
             <figcaption className="adm-thumb__bar">
               <button type="button" title="Move earlier" disabled={i === 0} onClick={() => move(i, -1)}>←</button>
               <span className="num">{String(i + 1).padStart(2, '0')}</span>
               <button type="button" title="Move later" disabled={i === list.length - 1} onClick={() => move(i, 1)}>→</button>
+              <button type="button" title="Edit details" onClick={() => setSel(sel === i ? null : i)}>✎</button>
               <button type="button" className="adm-thumb__x" title="Remove" onClick={() => remove(i)}>×</button>
             </figcaption>
           </figure>
         ))}
         {!list.length && <p className="adm-hint">No photographs yet — add some above.</p>}
       </div>
+
+      {product && (
+        <div className="adm-product">
+          <div className="adm-section__row">
+            <h3 className="adm-product__h">
+              Piece {String(sel + 1).padStart(2, '0')} — what the product page shows
+            </h3>
+            <button type="button" className="adm-linkbtn" onClick={() => setSel(null)}>Done</button>
+          </div>
+
+          <div className="adm-fields">
+            <label className="smy-field adm-field">
+              <span className="smy-field__label">Title</span>
+              <input className="smy-input" type="text" value={product.title || ''}
+                     onChange={e => patch(sel, { title: e.target.value })} />
+            </label>
+            <label className="smy-field adm-field">
+              <span className="smy-field__label">Price (optional, free text)</span>
+              <input className="smy-input" type="text" value={product.price || ''}
+                     onChange={e => patch(sel, { price: e.target.value })} />
+            </label>
+            <label className="smy-field adm-field">
+              <span className="smy-field__label">Small description</span>
+              <textarea className="smy-textarea adm-textarea" value={product.description || ''}
+                        onChange={e => patch(sel, { description: e.target.value })} />
+            </label>
+          </div>
+
+          <div className="adm-detailblock">
+            <span className="smy-field__label">Details shown under the photograph (metal, weight, shape, …)</span>
+            {details.map((d, di) => (
+              <div className="adm-detailrow" key={di}>
+                <input className="smy-input" type="text" placeholder="Label — e.g. Metal"
+                       value={d.label || ''} onChange={e => patchDetail(di, 'label', e.target.value)} />
+                <input className="smy-input" type="text" placeholder="Value — e.g. 18k rose gold"
+                       value={d.value || ''} onChange={e => patchDetail(di, 'value', e.target.value)} />
+                <button type="button" className="adm-thumb__x" title="Remove line"
+                        onClick={() => patch(sel, { details: details.filter((_, k) => k !== di) })}>×</button>
+              </div>
+            ))}
+            <button type="button" className="adm-linkbtn"
+                    onClick={() => patch(sel, { details: [...details, { label: '', value: '' }] })}>
+              + Add a detail line
+            </button>
+          </div>
+
+          <div className="adm-detailblock">
+            <div className="adm-section__row">
+              <div>
+                <span className="smy-field__label">More angles (optional)</span>
+                <p className="adm-hint">Extra photographs of this piece — visitors can flip through them on the product page.</p>
+              </div>
+              <button type="button" className="smy-cta" disabled={adding}
+                      onClick={() => extraRef.current && extraRef.current.click()}>
+                {adding ? 'Adding…' : 'Add angles'} <span className="smy-cta__arrow">+</span>
+              </button>
+              <input ref={extraRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                     onChange={e => addAngles(Array.from(e.target.files || []))} />
+            </div>
+            <div className="adm-grid">
+              {angles.map((src, xi) => (
+                <figure key={src.slice(0, 80) + xi} className="adm-thumb">
+                  <img src={src} alt="" loading="lazy" />
+                  <figcaption className="adm-thumb__bar">
+                    <span className="num">{String(xi + 1).padStart(2, '0')}</span>
+                    <button type="button" className="adm-thumb__x" title="Remove"
+                            onClick={() => patch(sel, { images: angles.filter((_, k) => k !== xi) })}>×</button>
+                  </figcaption>
+                </figure>
+              ))}
+              {!angles.length && <p className="adm-hint">No extra angles yet.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {note && <p className="adm-note">{note}</p>}
     </section>
   );
