@@ -115,13 +115,31 @@ function About({ navigate }) {
     name: '', email: '', project: 'jewelry', message: ''
   });
   const [sent, setSent] = React.useState(false);
+  const [sending, setSending] = React.useState(false);
+  const [sendError, setSendError] = React.useState(null);
 
   const update = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
+    if (sending) return;
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
-    setSent(true);
+    setSending(true);
+    setSendError(null);
+    let ok = false;
+    try {
+      const r = await fetch('/api/inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      ok = r.ok;
+    } catch { ok = false; }
+    setSending(false);
+    if (ok) setSent(true);
+    else setSendError(
+      `The letter could not be sent just now. Write to us directly at ${A.emailValue || 'the studio email'}, or try again in a moment — nothing you typed has been lost.`
+    );
   };
 
   // A fresh load of /…/about#contact can't use native anchor scrolling —
@@ -306,12 +324,14 @@ function About({ navigate }) {
                     <textarea className="smy-textarea" required value={form.message} onChange={update('message')} placeholder="Materials in mind, the room it will live in, the occasion, anything else." />
                   </label>
 
+                  {sendError && <p className="ab-form__error">{sendError}</p>}
+
                   <div className="ab-form__foot">
                     <span className="caption" style={{ color: 'var(--fg-muted)' }}>
                       {smyHas(A.replyNote) ? A.replyNote : ''}
                     </span>
-                    <button type="submit" className="smy-cta smy-cta--solid">
-                      {smyHas(A.submitLabel) ? A.submitLabel : 'Send'} <span className="smy-cta__arrow">→</span>
+                    <button type="submit" className="smy-cta smy-cta--solid" disabled={sending}>
+                      {sending ? 'Sending…' : (smyHas(A.submitLabel) ? A.submitLabel : 'Send')} <span className="smy-cta__arrow">→</span>
                     </button>
                   </div>
                 </>
