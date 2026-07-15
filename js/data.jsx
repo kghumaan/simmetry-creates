@@ -154,6 +154,11 @@ const WOODWORK_PRODUCTS = [
 ];
 
 const SMY_DEFAULTS = {
+  branding: {
+    jewelryLogo: '/assets/emblem-jewelry.png',
+    woodworkLogo: '/assets/emblem-woodwork.png',
+  },
+
   products: {
     jewelry: JEWELRY_PRODUCTS,
     woodwork: WOODWORK_PRODUCTS,

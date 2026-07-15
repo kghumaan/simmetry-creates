@@ -118,6 +118,11 @@ function smyAbsolutizePaths(c) {
     }
   }
   if (out.about) out.about = { ...out.about, portrait: fix(out.about.portrait) };
+  if (out.branding) out.branding = {
+    ...out.branding,
+    jewelryLogo: fix(out.branding.jewelryLogo),
+    woodworkLogo: fix(out.branding.woodworkLogo),
+  };
   return out;
 }
 

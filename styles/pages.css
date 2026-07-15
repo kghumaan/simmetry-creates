@@ -670,7 +670,8 @@
 .pd-thumb.is-active { opacity: 1; border-color: var(--accent); }
 
 .pd-specs {
-  margin: 28px 0 0;
+  margin: 8px 0 0;
+  width: 100%;
   border-top: 1px solid var(--hairline);
 }
 .pd-spec {

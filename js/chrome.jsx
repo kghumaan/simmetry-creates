@@ -1,4 +1,4 @@
-/* global React, useContent, useEdit, E, Lines, smyHas, smyInquiryVisible */
+/* global React, useContent, useEdit, E, EUpload, Lines, smyHas, smyInquiryVisible */
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 /* =========================================================================
@@ -6,6 +6,12 @@ const { useState, useEffect, useRef, useCallback, useMemo, createContext, useCon
    ========================================================================= */
 
 const ModeContext = createContext(null);
+
+/* Logo for a mode — editable via branding.{jewelry,woodwork}Logo. */
+function smyLogoFor(branding, m) {
+  const key = m === 'woodwork' ? 'woodworkLogo' : 'jewelryLogo';
+  return (branding && branding[key]) || `/assets/emblem-${m}.png`;
+}
 
 function readInitialMode() {
   // URL decides. (index.html's boot script has already normalized the path.)
@@ -22,16 +28,24 @@ function routeMode(route) {
 
 function ModeProvider({ children }) {
   const [mode, setModeState] = useState(readInitialMode);
+  const branding = useContent().content.branding;
+  const brandingRef = useRef(branding);
+  useEffect(() => { brandingRef.current = branding; }, [branding]);
   const overlayRef = useRef(null);
   const isAnimating = useRef(false);
 
-  // Apply mode to <html> on mount + every change; the favicon follows the mode.
+  // Apply mode to <html> on mount + every change; the favicon follows the
+  // mode's logo (the pre-sized favicon files when the logo is the default,
+  // the uploaded image itself when it has been replaced).
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode);
     localStorage.setItem('smy.mode', mode);
     const fav = document.getElementById('smy-favicon');
-    if (fav) fav.href = `/assets/favicon-${mode}.png`;
-  }, [mode]);
+    if (fav) {
+      const logo = smyLogoFor(branding, mode);
+      fav.href = logo === `/assets/emblem-${mode}.png` ? `/assets/favicon-${mode}.png` : logo;
+    }
+  }, [mode, branding]);
 
   // The reveal: paint overlay with the new theme, expand a circle from
   // the toggle origin, then commit the theme and hide the overlay.
@@ -60,7 +74,7 @@ function ModeProvider({ children }) {
     // Show only the incoming mode's emblem inside the reveal overlay.
     const layer = overlay.querySelector('.smy-reveal__emblem');
     if (layer) {
-      layer.style.backgroundImage = `url(/assets/emblem-${nextMode}.png)`;
+      layer.style.backgroundImage = `url(${smyLogoFor(brandingRef.current, nextMode)})`;
     }
 
     // Force a frame so initial 0px clip-path is registered before transition
@@ -100,6 +114,7 @@ function ModeProvider({ children }) {
 function useMode() { return useContext(ModeContext); }
 
 const ModeRevealOverlay = React.forwardRef(function ModeRevealOverlay({ mode }, ref) {
+  const branding = useContent().content.branding;
   // We render a single emblem layer. Its background-image is set imperatively
   // in setMode() right before the reveal so the overlay shows only the
   // *incoming* mode's emblem during the animation.
@@ -108,7 +123,7 @@ const ModeRevealOverlay = React.forwardRef(function ModeRevealOverlay({ mode }, 
       <div className="smy-reveal__inner">
         <div
           className="smy-reveal__emblem is-active"
-          style={{ backgroundImage: `url(/assets/emblem-${mode}.png)` }}
+          style={{ backgroundImage: `url(${smyLogoFor(branding, mode)})` }}
         />
       </div>
     </div>
@@ -153,7 +168,10 @@ function TopNav({ route, navigate }) {
   // Hide the Contact link when the admin has emptied the whole inquiry
   // section — otherwise it points at an anchor that no longer exists.
   // (Always visible in edit mode so the section can be brought back.)
-  const contactVisible = smyInquiryVisible(useContent().content.about) || useEdit().active;
+  const { content } = useContent();
+  const edit = useEdit();
+  const contactVisible = smyInquiryVisible(content.about) || edit.active;
+  const branding = content.branding;
   const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
@@ -223,15 +241,23 @@ function TopNav({ route, navigate }) {
           <span className="smy-brand__emblem" aria-hidden="true">
             <span
               className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
-              style={{ backgroundImage: 'url(/assets/emblem-jewelry.png)' }}
+              style={{ backgroundImage: `url(${smyLogoFor(branding, 'jewelry')})` }}
             />
             <span
               className={`smy-brand__emblem-layer ${mode === 'woodwork' ? 'is-active' : ''}`}
-              style={{ backgroundImage: 'url(/assets/emblem-woodwork.png)' }}
+              style={{ backgroundImage: `url(${smyLogoFor(branding, 'woodwork')})` }}
             />
           </span>
           <span className="smy-brand__word">Simmetry<span className="dot">.</span>Creates</span>
         </a>
+        {edit.active && (
+          <span className="e-logobtn">
+            <EUpload
+              label={`Replace ${mode} logo`}
+              onDone={(urls) => edit.setField(`branding.${mode === 'woodwork' ? 'woodworkLogo' : 'jewelryLogo'}`, urls[0])}
+            />
+          </span>
+        )}
 
         <div className="smy-topnav__right">
           <div className="smy-modetoggle smy-topnav__inline">
@@ -468,15 +494,16 @@ function Tile({ kind = 'portrait', label, tone = 0, corners = false, image, alt,
 
 function Emblem({ size = 240, style = {} }) {
   const { mode } = useMode();
+  const branding = useContent().content.branding;
   return (
     <div className="smy-emblem" style={{ width: size, height: size, ...style }}>
       <div
         className={`smy-emblem__layer ${mode === 'jewelry' ? 'is-active' : ''}`}
-        style={{ backgroundImage: 'url(/assets/emblem-jewelry.png)' }}
+        style={{ backgroundImage: `url(${smyLogoFor(branding, 'jewelry')})` }}
       />
       <div
         className={`smy-emblem__layer ${mode === 'woodwork' ? 'is-active' : ''}`}
-        style={{ backgroundImage: 'url(/assets/emblem-woodwork.png)' }}
+        style={{ backgroundImage: `url(${smyLogoFor(branding, 'woodwork')})` }}
       />
     </div>
   );

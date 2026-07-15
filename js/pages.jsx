@@ -100,8 +100,8 @@ function Gallery({ navigate }) {
 }
 
 /* =========================================================================
-   Product page — /jewelry/3, /woodwork/0. Specs and price under the
-   photographs, title and description alongside. In edit mode every field
+   Product page — /jewelry/3, /woodwork/0. Photographs on the left; title,
+   description, then specs and price on the right. In edit mode every field
    is editable in place; detail lines and angle photos can be added.
    ========================================================================= */
 
@@ -184,6 +184,19 @@ function ProductPage({ navigate, route }) {
               <EUpload label="Replace main photograph" onDone={(urls) => { patch({ image: urls[0] }); setActive(0); }} />
             </div>
           )}
+        </div>
+
+        <div className="pd-info">
+          <span className="caption caption--accent">
+            — No. {num} · {mode === 'jewelry' ? 'Jewelry' : 'Woodwork'}
+          </span>
+          {showTitle && (
+            <h1 className="pd-title"><E path={`${base}.title`} ph="Title…" /></h1>
+          )}
+          {!showTitle && <h1 className="pd-title">Piece No. {num}</h1>}
+          {(edit.active || smyHas(product.description)) && (
+            <p className="smy-lede pd-desc"><E path={`${base}.description`} ph="A few sentences about this piece…" /></p>
+          )}
 
           {(specs.length > 0 || edit.active || smyHas(product.price)) && (
             <dl className="pd-specs">
@@ -217,19 +230,7 @@ function ProductPage({ navigate, route }) {
               )}
             </dl>
           )}
-        </div>
 
-        <div className="pd-info">
-          <span className="caption caption--accent">
-            — No. {num} · {mode === 'jewelry' ? 'Jewelry' : 'Woodwork'}
-          </span>
-          {showTitle && (
-            <h1 className="pd-title"><E path={`${base}.title`} ph="Title…" /></h1>
-          )}
-          {!showTitle && <h1 className="pd-title">Piece No. {num}</h1>}
-          {(edit.active || smyHas(product.description)) && (
-            <p className="smy-lede pd-desc"><E path={`${base}.description`} ph="A few sentences about this piece…" /></p>
-          )}
           <div className="pd-cta">
             <a className="smy-cta smy-cta--solid" href={prefix + '/about'} onClick={e => { e.preventDefault(); navigate(prefix + '/about'); }}>
               {smyHas(content.gallery.ctaLabel) ? content.gallery.ctaLabel : 'Begin a commission'} <span className="smy-cta__arrow">→</span>
