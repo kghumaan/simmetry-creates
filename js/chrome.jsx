@@ -8,11 +8,8 @@ const { useState, useEffect, useRef, useCallback, useMemo, createContext, useCon
 const ModeContext = createContext(null);
 
 function readInitialMode() {
-  // URL decides; `/ww` and `/woodwork` → woodwork, everything else jewelry.
-  // (index.html's boot script has already normalized legacy hash routes.)
-  const path = window.location.pathname || '/';
-  if (/^\/(ww|woodwork)(\/|$)/.test(path)) return 'woodwork';
-  return 'jewelry';
+  // URL decides. (index.html's boot script has already normalized the path.)
+  return routeMode(window.location.pathname || '/');
 }
 
 const WW_RE = /^\/(ww|woodwork)(\/|$)/;
@@ -126,12 +123,14 @@ function useRoute() {
   // History-API router over clean paths (/jewelry, /woodwork/about, /admin).
   // The server rewrites every path to index.html (vercel.json), and
   // index.html's boot script normalizes `/`, /ww, and legacy #/ routes.
-  const [route, setRoute] = useState(() => window.location.pathname || '/');
+  const readPath = () => {
+    const p = window.location.pathname || '/';
+    return p.length > 1 ? (p.replace(/\/+$/, '') || '/') : p;
+  };
+  const [route, setRoute] = useState(readPath);
   useEffect(() => {
-    const onPop = () => {
-      setRoute(window.location.pathname || '/');
-      if (window.SMY_updateShareMeta) window.SMY_updateShareMeta();
-    };
+    // share.jsx has its own popstate listener for the meta tags.
+    const onPop = () => setRoute(readPath());
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
@@ -350,7 +349,7 @@ function Footer({ navigate }) {
   const { mode } = useMode();
   const F = useContent().content.footer;
   const wwHref = '/woodwork';
-  const aboutHref = (mode === 'woodwork' ? '/ww' : '/jewelry') + '/about';
+  const aboutHref = (mode === 'woodwork' ? '/woodwork' : '/jewelry') + '/about';
 
   const go = (href) => (e) => { e.preventDefault(); navigate(href); };
 

@@ -14,7 +14,7 @@ function Gallery({ navigate, route }) {
   const title = mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle;
   const showCount = smyHas(G.countSuffix);
   const showTitle = smyHas(title);
-  const prefix = mode === 'woodwork' ? '/ww' : '/jewelry';
+  const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
 
   const itemMatch = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)\/?$/);
   const itemIndex = itemMatch ? Math.min(images.length - 1, Math.max(0, parseInt(itemMatch[1], 10))) : null;
@@ -123,6 +123,17 @@ function About({ navigate }) {
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
     setSent(true);
   };
+
+  // A fresh load of /…/about#contact can't use native anchor scrolling —
+  // the #contact element doesn't exist until React renders it.
+  React.useEffect(() => {
+    if (window.location.hash !== '#contact') return;
+    const t = setTimeout(() => {
+      const el = document.getElementById('contact');
+      if (el) el.scrollIntoView({ block: 'start' });
+    }, 150);
+    return () => clearTimeout(t);
+  }, []);
 
   // Empty content collapses: a bio column, a process step, or a contact block
   // vanishes when its fields are blank; a whole section vanishes when every

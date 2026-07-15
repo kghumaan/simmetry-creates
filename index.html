@@ -44,9 +44,10 @@
     }
     path = path.replace(/^\/index\.html$/, '/');
     path = path.replace(/^\/(ww|woodwork)(\/|$)/, '/woodwork$2');
+    if (path.length > 1) path = path.replace(/\/+$/, '') || '/';
     if (path === '/') path = '/jewelry';
     if (path !== location.pathname || location.hash) {
-      history.replaceState({}, '', path + (hash || ''));
+      history.replaceState({}, '', path + location.search + (hash || ''));
     }
     var mode = /^\/woodwork(\/|$)/.test(path) ? 'woodwork' : 'jewelry';
     document.documentElement.setAttribute('data-mode', mode);

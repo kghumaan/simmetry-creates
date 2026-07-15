@@ -30,7 +30,7 @@ function LandingA({ navigate }) {
           <div className="smy-eyebrow"><span className="num">04</span>Selected work · spring</div>
           <h1 className="smy-display">{copy.headline}</h1>
           <p className="smy-lede">{copy.lede}</p>
-          <a className="smy-cta" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+          <a className="smy-cta" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
             View the {mode === 'jewelry' ? 'jewelry' : 'woodwork'} <span className="smy-cta__arrow">→</span>
           </a>
           <div className="lA-hero__meta">
@@ -54,7 +54,7 @@ function LandingA({ navigate }) {
         <div className="lA-grid">
           {featured.map((src, i) => (
             <Reveal key={src} delay={i * 60} className={`lA-card lA-card--${i % 4}`}>
-              <a className="smy-piece" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+              <a className="smy-piece" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
                 <Tile kind="portrait" image={src} />
               </a>
             </Reveal>
@@ -62,7 +62,7 @@ function LandingA({ navigate }) {
         </div>
 
         <div className="lA-section__more">
-          <a className="smy-cta" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+          <a className="smy-cta" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
             All {images.length} pieces <span className="smy-cta__arrow">→</span>
           </a>
         </div>
@@ -77,7 +77,7 @@ function LandingA({ navigate }) {
           <p className="smy-lede" style={{ marginTop: 16 }}>
             We do not photograph commissions until the client has lived with them. The pieces shown here have left the studio, returned to be photographed, and gone home again.
           </p>
-          <a className="smy-cta" href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+          <a className="smy-cta" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
             Begin a commission <span className="smy-cta__arrow">→</span>
           </a>
         </Reveal>
@@ -128,7 +128,7 @@ function LandingA({ navigate }) {
         <div className="smy-container lA-close__inner">
           <Emblem size={160} />
           <h2 className="lA-close__h">A piece begins<br /><em>with a conversation.</em></h2>
-          <a className="smy-cta smy-cta--solid" href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+          <a className="smy-cta smy-cta--solid" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
             Begin a commission <span className="smy-cta__arrow">→</span>
           </a>
         </div>
@@ -200,7 +200,7 @@ function LandingB({ navigate }) {
         </div>
 
         <div style={{ marginTop: 64 }}>
-          <a className="smy-cta" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+          <a className="smy-cta" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
             Open the gallery <span className="smy-cta__arrow">→</span>
           </a>
         </div>
@@ -211,7 +211,7 @@ function LandingB({ navigate }) {
           <hr className="smy-rule" />
           <div className="lB-close__row">
             <h2 className="lB-close__h">Begin a conversation.</h2>
-            <a className="smy-cta smy-cta--solid" href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+            <a className="smy-cta smy-cta--solid" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
               Begin a commission <span className="smy-cta__arrow">→</span>
             </a>
           </div>
@@ -250,10 +250,10 @@ function LandingC({ navigate }) {
             </h1>
             <p className="smy-lede lC-lede">{copy.lede}</p>
             <div className="lC-cta-row">
-              <a className="smy-cta" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+              <a className="smy-cta" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
                 Open the {mode === 'jewelry' ? 'jewelry' : 'woodwork'} <span className="smy-cta__arrow">→</span>
               </a>
-              <a className="smy-cta" href={'#/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+              <a className="smy-cta" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
                 Begin a commission <span className="smy-cta__arrow">→</span>
               </a>
             </div>
@@ -308,7 +308,7 @@ function LandingC({ navigate }) {
           ))}
         </div>
         <div style={{ marginTop: 64, display: 'flex', justifyContent: 'flex-end' }}>
-          <a className="smy-cta" href={'#/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
+          <a className="smy-cta" href={'/' + mode} onClick={e => { e.preventDefault(); navigate('/' + mode); }}>
             Continue to the gallery <span className="smy-cta__arrow">→</span>
           </a>
         </div>

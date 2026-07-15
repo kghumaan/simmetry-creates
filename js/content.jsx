@@ -50,14 +50,19 @@ function smyLoadLocal() {
 /* Content saved before the clean-URL migration holds relative image paths
    ('uploads/…', 'assets/…') that break on nested routes — root them. */
 function smyAbsolutizePaths(c) {
+  // Pure: deepMerge can hand back SMY_DEFAULTS subtrees by reference, so
+  // mutating in place would silently rewrite the shared defaults object.
   const fix = (v) => typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
-  if (c && c.images) {
-    for (const k of Object.keys(c.images)) {
-      if (Array.isArray(c.images[k])) c.images[k] = c.images[k].map(fix);
+  if (!c) return c;
+  const out = { ...c };
+  if (out.images) {
+    out.images = { ...out.images };
+    for (const k of Object.keys(out.images)) {
+      if (Array.isArray(out.images[k])) out.images[k] = out.images[k].map(fix);
     }
   }
-  if (c && c.about) c.about.portrait = fix(c.about.portrait);
-  return c;
+  if (out.about) out.about = { ...out.about, portrait: fix(out.about.portrait) };
+  return out;
 }
 
 async function smyFetchRemote() {
