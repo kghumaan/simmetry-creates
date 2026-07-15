@@ -331,3 +331,7 @@
 /* Keep the fixed bar from covering the footer while editing */
 .e-bar + * { padding-bottom: 0; }
 html.is-editing body { padding-bottom: 76px; }
+
+/* Replace-logo button beside the brand mark while editing */
+.e-logobtn { margin-left: 14px; display: inline-flex; align-items: center; }
+.e-logobtn .e-btn--label { font-size: 12px; padding: 4px 8px; }
