@@ -8,31 +8,31 @@
 const SMY_DEFAULTS = {
   images: {
     jewelry: [
-      'uploads/jewelry/1770438028429.png',
-      'uploads/jewelry/1770444812567.png',
-      'uploads/jewelry/1770532742242.png',
-      'uploads/jewelry/1770786241284(1)(1)(1).png',
-      'uploads/jewelry/1770788657479.png',
-      'uploads/jewelry/1770890994769.png',
-      'uploads/jewelry/1770983581672.png',
-      'uploads/jewelry/1772117224535.png',
-      'uploads/jewelry/1772117375815.png',
-      'uploads/jewelry/1773296958445.png',
-      'uploads/jewelry/1773469195917.png',
-      'uploads/jewelry/1773636672403.png',
-      'uploads/jewelry/file_00000000d09c71fab3061951c044c8bb.png',
+      '/uploads/jewelry/1770438028429.png',
+      '/uploads/jewelry/1770444812567.png',
+      '/uploads/jewelry/1770532742242.png',
+      '/uploads/jewelry/1770786241284(1)(1)(1).png',
+      '/uploads/jewelry/1770788657479.png',
+      '/uploads/jewelry/1770890994769.png',
+      '/uploads/jewelry/1770983581672.png',
+      '/uploads/jewelry/1772117224535.png',
+      '/uploads/jewelry/1772117375815.png',
+      '/uploads/jewelry/1773296958445.png',
+      '/uploads/jewelry/1773469195917.png',
+      '/uploads/jewelry/1773636672403.png',
+      '/uploads/jewelry/file_00000000d09c71fab3061951c044c8bb.png',
     ],
     woodwork: [
-      'uploads/woodwork/1774266702078.png',
-      'uploads/woodwork/20230408_141429.jpg',
-      'uploads/woodwork/20230503_224742.jpg',
-      'uploads/woodwork/20230703_205012.jpg',
-      'uploads/woodwork/20230708_101814.jpg',
-      'uploads/woodwork/20230826_203208.jpg',
-      'uploads/woodwork/20231101_121228.jpg',
-      'uploads/woodwork/20240805_084736.jpg',
-      'uploads/woodwork/20250505_165628.jpg',
-      'uploads/woodwork/20250505_165634.jpg',
+      '/uploads/woodwork/1774266702078.png',
+      '/uploads/woodwork/20230408_141429.jpg',
+      '/uploads/woodwork/20230503_224742.jpg',
+      '/uploads/woodwork/20230703_205012.jpg',
+      '/uploads/woodwork/20230708_101814.jpg',
+      '/uploads/woodwork/20230826_203208.jpg',
+      '/uploads/woodwork/20231101_121228.jpg',
+      '/uploads/woodwork/20240805_084736.jpg',
+      '/uploads/woodwork/20250505_165628.jpg',
+      '/uploads/woodwork/20250505_165634.jpg',
     ],
   },
 
@@ -44,35 +44,37 @@ const SMY_DEFAULTS = {
   },
 
   about: {
-    portrait: 'assets/ashish.jpeg',
+    portrait: '/assets/ashish.jpeg',
     eyebrow: '— About',
     title: 'Ashish Savani.',
     titleEm: 'One bench, two crafts.',
     lede:
-      'I work alone, in a north-facing room above a tannery in Mill Valley. ' +
-      'In the morning I cut metal; in the afternoon I cut wood. I keep both ' +
-      'practices small on purpose. A piece is finished when it is right — ' +
-      'not when it is due.',
+      'I work alone, in a small studio in Mumbai. My hands were trained in ' +
+      'Bangkok — metal first, then wood — and the practice followed me home. ' +
+      'In the morning I cut metal; in the afternoon I cut wood. This work is ' +
+      'my passion, kept small on purpose. A piece is finished when it is ' +
+      'right — not when it is due.',
     portraitCaption: 'A portrait, away from the bench',
 
-    bio1Label: '— 01 Beginnings',
+    bio1Label: '— 01 Bangkok, beginnings',
     bio1:
-      'I learned to set stones from my grandfather, in a back room in Surat, ' +
-      'in the summers between school years. He taught me that a stone has a ' +
-      "seat it wants, and the maker's job is to find it. I held that idea " +
-      'without knowing it for a long time.',
+      'I learned to set stones in Bangkok, in the workshops off Charoen ' +
+      "Krung Road, where the city's finest setters work three to a bench. " +
+      'They taught me that a stone has a seat it wants, and the maker’s ' +
+      'job is to find it. I held that idea without knowing it for a long time.',
     bio2Label: '— 02 Wood, after metal',
     bio2:
-      'I came to wood late, through a chair that needed mending. The chair ' +
-      'took six months. The thing I learned in those six months — that a ' +
-      'joint should not need glue to hold — has stayed with me through every ' +
-      'piece since.',
-    bio3Label: '— 03 The studio, today',
+      'Wood came later, through an old teak chair that needed mending. The ' +
+      'chair took six months. The thing I learned in those six months — that ' +
+      'a joint should not need glue to hold — has stayed with me through ' +
+      'every piece since.',
+    bio3Label: '— 03 Mumbai, today',
     bio3:
-      'The studio takes on roughly eighteen pieces a year, split between ' +
-      'the two practices. Two are in progress at any time. We open the diary ' +
-      'three times — January, May, September — and accept what fits the ' +
-      'quarter. The wait is honest because the work is not hurried.',
+      'The studio is in Mumbai now — one room, good morning light. It takes ' +
+      'on roughly eighteen pieces a year, split between the two practices. ' +
+      'This has never been a trade to me; it is the thing I love doing most. ' +
+      'We open the diary three times — January, May, September — and the ' +
+      'wait is honest because the work is not hurried.',
 
     processNum: '— 04 Process',
     processTitle: 'How a commission unfolds',
@@ -92,7 +94,7 @@ const SMY_DEFAULTS = {
       "for the kind of piece that doesn't fit a form — write a paragraph " +
       'and we will write back within a week.',
     postLabel: 'By post',
-    postValue: 'Box 41, Mill Valley\nCalifornia 94941',
+    postValue: 'The studio, Bandra West\nMumbai 400050',
     emailLabel: 'By letter',
     emailValue: 'studio@simmetry.creates',
     diaryLabel: 'Diary opens',
@@ -114,7 +116,7 @@ const SMY_DEFAULTS = {
     practiceCommission: 'Begin a commission',
     studioHeading: 'Studio',
     email: 'studio@simmetry.creates',
-    location: 'Mill Valley, California',
+    location: 'Mumbai, India',
     hours: 'By appointment',
     baseLeft: '© 2026 Ashish Savani · All work shown is one of one',
     baseRight: 'The studio observes a quiet month each January',

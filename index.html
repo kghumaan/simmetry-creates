@@ -12,29 +12,47 @@
 <meta property="og:type" content="website" />
 <meta property="og:title" content="Simmetry.Creates" />
 <meta property="og:description" content="Fine jewelry and bespoke woodwork from the studio of Ashish Savani." />
-<meta property="og:image" content="assets/emblem-jewelry.png" />
+<meta property="og:image" content="https://www.simmetrycreates.com/assets/emblem-jewelry.png" />
 <meta property="og:image:alt" content="Simmetry.Creates emblem" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Simmetry.Creates" />
 <meta name="twitter:description" content="Fine jewelry and bespoke woodwork from the studio of Ashish Savani." />
-<meta name="twitter:image" content="assets/emblem-jewelry.png" />
+<meta name="twitter:image" content="https://www.simmetrycreates.com/assets/emblem-jewelry.png" />
 
-<link rel="stylesheet" href="styles/tokens.css" />
-<link rel="stylesheet" href="styles/components.css" />
-<link rel="stylesheet" href="styles/app.css" />
-<link rel="stylesheet" href="styles/pages.css" />
-<link rel="stylesheet" href="styles/admin.css" />
+<link rel="icon" id="smy-favicon" type="image/png" href="/assets/favicon-jewelry.png" />
+<link rel="apple-touch-icon" href="/assets/favicon-jewelry.png" />
+
+<link rel="stylesheet" href="/styles/tokens.css" />
+<link rel="stylesheet" href="/styles/components.css" />
+<link rel="stylesheet" href="/styles/app.css" />
+<link rel="stylesheet" href="/styles/pages.css" />
+<link rel="stylesheet" href="/styles/admin.css" />
 
 <script>
-  // First-paint mode: respect URL, else localStorage. Avoids cream→olive flash.
+  // Path normalization before anything renders:
+  //  - legacy hash routes (#/ww/about) become clean paths (/woodwork/about)
+  //  - bare `/` and /index.html land on /jewelry
+  //  - /ww aliases collapse into /woodwork
+  // Then first-paint mode + favicon come from the final path, avoiding a
+  // cream→olive flash on woodwork pages.
   (function () {
-    var hash = location.hash || '#/';
-    var path = hash.replace(/^#/, '') || '/';
-    var mode = 'jewelry';
-    if (/^\/(ww|woodwork)(\/|$)/.test(path)) mode = 'woodwork';
-    else if (/^\/jewelry(\/|$)/.test(path)) mode = 'jewelry';
-    // Home (`/`) always opens in jewelry; ignore localStorage there.
+    var path = location.pathname || '/';
+    var hash = location.hash || '';
+    if (/^#\//.test(hash)) {
+      path = hash.slice(1);
+      hash = '';
+    }
+    path = path.replace(/^\/index\.html$/, '/');
+    path = path.replace(/^\/(ww|woodwork)(\/|$)/, '/woodwork$2');
+    if (path.length > 1) path = path.replace(/\/+$/, '') || '/';
+    if (path === '/') path = '/jewelry';
+    if (path !== location.pathname || location.hash) {
+      history.replaceState({}, '', path + location.search + (hash || ''));
+    }
+    var mode = /^\/woodwork(\/|$)/.test(path) ? 'woodwork' : 'jewelry';
     document.documentElement.setAttribute('data-mode', mode);
+    var fav = document.getElementById('smy-favicon');
+    if (fav) fav.href = '/assets/favicon-' + mode + '.png';
   })();
 </script>
 
@@ -53,15 +71,15 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script type="text/babel" src="tweaks-panel.jsx"></script>
-<script type="text/babel" src="js/data.jsx"></script>
-<script type="text/babel" src="js/share.jsx"></script>
-<script type="text/babel" src="js/content.jsx"></script>
-<script type="text/babel" src="js/chrome.jsx"></script>
-<script type="text/babel" src="js/landing.jsx"></script>
-<script type="text/babel" src="js/pages.jsx"></script>
-<script type="text/babel" src="js/admin.jsx"></script>
-<script type="text/babel" src="js/app.jsx"></script>
+<script type="text/babel" src="/tweaks-panel.jsx"></script>
+<script type="text/babel" src="/js/data.jsx"></script>
+<script type="text/babel" src="/js/share.jsx"></script>
+<script type="text/babel" src="/js/content.jsx"></script>
+<script type="text/babel" src="/js/chrome.jsx"></script>
+<script type="text/babel" src="/js/landing.jsx"></script>
+<script type="text/babel" src="/js/pages.jsx"></script>
+<script type="text/babel" src="/js/admin.jsx"></script>
+<script type="text/babel" src="/js/app.jsx"></script>
 
 </body>
 </html>

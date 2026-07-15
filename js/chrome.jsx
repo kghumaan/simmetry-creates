@@ -8,13 +8,8 @@ const { useState, useEffect, useRef, useCallback, useMemo, createContext, useCon
 const ModeContext = createContext(null);
 
 function readInitialMode() {
-  // URL beats localStorage; `/ww` and `/woodwork` → woodwork, `/jewelry` → jewelry,
-  // bare `/` (home) always opens in jewelry.
-  const hash = window.location.hash || '#/';
-  const path = hash.replace(/^#/, '') || '/';
-  if (/^\/(ww|woodwork)(\/|$)/.test(path)) return 'woodwork';
-  if (/^\/jewelry(\/|$)/.test(path)) return 'jewelry';
-  return 'jewelry';
+  // URL decides. (index.html's boot script has already normalized the path.)
+  return routeMode(window.location.pathname || '/');
 }
 
 const WW_RE = /^\/(ww|woodwork)(\/|$)/;
@@ -30,10 +25,12 @@ function ModeProvider({ children }) {
   const overlayRef = useRef(null);
   const isAnimating = useRef(false);
 
-  // Apply mode to <html> on mount + every change
+  // Apply mode to <html> on mount + every change; the favicon follows the mode.
   useEffect(() => {
     document.documentElement.setAttribute('data-mode', mode);
     localStorage.setItem('smy.mode', mode);
+    const fav = document.getElementById('smy-favicon');
+    if (fav) fav.href = `/assets/favicon-${mode}.png`;
   }, [mode]);
 
   // The reveal: paint overlay with the new theme, expand a circle from
@@ -63,7 +60,7 @@ function ModeProvider({ children }) {
     // Show only the incoming mode's emblem inside the reveal overlay.
     const layer = overlay.querySelector('.smy-reveal__emblem');
     if (layer) {
-      layer.style.backgroundImage = `url(assets/emblem-${nextMode}.png)`;
+      layer.style.backgroundImage = `url(/assets/emblem-${nextMode}.png)`;
     }
 
     // Force a frame so initial 0px clip-path is registered before transition
@@ -111,7 +108,7 @@ const ModeRevealOverlay = React.forwardRef(function ModeRevealOverlay({ mode }, 
       <div className="smy-reveal__inner">
         <div
           className="smy-reveal__emblem is-active"
-          style={{ backgroundImage: `url(assets/emblem-${mode}.png)` }}
+          style={{ backgroundImage: `url(/assets/emblem-${mode}.png)` }}
         />
       </div>
     </div>
@@ -123,16 +120,28 @@ const ModeRevealOverlay = React.forwardRef(function ModeRevealOverlay({ mode }, 
    ========================================================================= */
 
 function useRoute() {
-  const [route, setRoute] = useState(() => {
-    const h = window.location.hash || '#/';
-    return h.replace(/^#/, '') || '/';
-  });
+  // History-API router over clean paths (/jewelry, /woodwork/about, /admin).
+  // The server rewrites every path to index.html (vercel.json), and
+  // index.html's boot script normalizes `/`, /ww, and legacy #/ routes.
+  const readPath = () => {
+    const p = window.location.pathname || '/';
+    return p.length > 1 ? (p.replace(/\/+$/, '') || '/') : p;
+  };
+  const [route, setRoute] = useState(readPath);
   useEffect(() => {
-    const onHash = () => setRoute((window.location.hash || '#/').replace(/^#/, '') || '/');
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+    // share.jsx has its own popstate listener for the meta tags.
+    const onPop = () => setRoute(readPath());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   }, []);
-  return [route, (path) => { window.location.hash = path; }];
+  const navigate = (path) => {
+    if (path === window.location.pathname) return;
+    window.history.pushState({}, '', path);
+    setRoute(path);
+    // pushState fires no event — nudge the share-meta updater by hand.
+    if (window.SMY_updateShareMeta) window.SMY_updateShareMeta();
+  };
+  return [route, navigate];
 }
 
 /* =========================================================================
@@ -182,7 +191,7 @@ function TopNav({ route, navigate }) {
     };
   }, []);
 
-  const modePrefix = (m) => m === 'woodwork' ? '/ww' : '/jewelry';
+  const modePrefix = (m) => m === 'woodwork' ? '/woodwork' : '/jewelry';
 
   const onToggle = (target, e) => {
     if (target === mode) return;
@@ -209,15 +218,15 @@ function TopNav({ route, navigate }) {
   return (
     <header className={`smy-topnav ${hidden && !menuOpen ? 'is-hidden' : ''} ${menuOpen ? 'is-menu-open' : ''}`}>
       <div className="smy-topnav__inner">
-        <a className="smy-brand smy-brand--with-mark" href="#/" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
+        <a className="smy-brand smy-brand--with-mark" href="/jewelry" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
           <span className="smy-brand__emblem" aria-hidden="true">
             <span
               className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
-              style={{ backgroundImage: 'url(assets/emblem-jewelry.png)' }}
+              style={{ backgroundImage: 'url(/assets/emblem-jewelry.png)' }}
             />
             <span
               className={`smy-brand__emblem-layer ${mode === 'woodwork' ? 'is-active' : ''}`}
-              style={{ backgroundImage: 'url(assets/emblem-woodwork.png)' }}
+              style={{ backgroundImage: 'url(/assets/emblem-woodwork.png)' }}
             />
           </span>
           <span className="smy-brand__word">Simmetry<span className="dot">.</span>Creates</span>
@@ -240,20 +249,20 @@ function TopNav({ route, navigate }) {
           <span className="smy-topnav__divider smy-topnav__inline" />
           <nav className="smy-topnav__links smy-topnav__inline">
             <a className="smy-navlink"
-               href={'#' + modePrefix(mode)}
+               href={modePrefix(mode)}
                aria-current={section === 'gallery' ? 'page' : undefined}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
               Gallery
             </a>
             <a className="smy-navlink"
-               href={'#' + modePrefix(mode) + '/about'}
+               href={modePrefix(mode) + '/about'}
                aria-current={section === 'about' ? 'page' : undefined}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
             {contactVisible && (
               <a className="smy-navlink"
-                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 href={modePrefix(mode) + '/about#contact'}
                  onClick={goContact}>
                 Contact
               </a>
@@ -301,19 +310,19 @@ function TopNav({ route, navigate }) {
             <span className="smy-panel__label">Pages</span>
             <a className="smy-panel__link"
                aria-current={section === 'gallery' ? 'page' : undefined}
-               href={'#' + modePrefix(mode)}
+               href={modePrefix(mode)}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
               Gallery
             </a>
             <a className="smy-panel__link"
                aria-current={section === 'about' ? 'page' : undefined}
-               href={'#' + modePrefix(mode) + '/about'}
+               href={modePrefix(mode) + '/about'}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
               About
             </a>
             {contactVisible && (
               <a className="smy-panel__link"
-                 href={'#' + modePrefix(mode) + '/about#contact'}
+                 href={modePrefix(mode) + '/about#contact'}
                  onClick={goContact}>
                 Contact
               </a>
@@ -339,8 +348,8 @@ function currentSection(route) {
 function Footer({ navigate }) {
   const { mode } = useMode();
   const F = useContent().content.footer;
-  const wwHref = '/ww';
-  const aboutHref = (mode === 'woodwork' ? '/ww' : '/jewelry') + '/about';
+  const wwHref = '/woodwork';
+  const aboutHref = (mode === 'woodwork' ? '/woodwork' : '/jewelry') + '/about';
 
   const go = (href) => (e) => { e.preventDefault(); navigate(href); };
 
@@ -395,8 +404,8 @@ function Footer({ navigate }) {
                     {r.mailto
                       ? <a href={'mailto:' + String(r.label).trim()}>{r.label}</a>
                       : r.href
-                        ? <a href={'#' + r.href} onClick={go(r.href)}>{r.label}</a>
-                        : <a href="#">{r.label}</a>}
+                        ? <a href={r.href} onClick={go(r.href)}>{r.label}</a>
+                        : <a href="#" onClick={e => e.preventDefault()}>{r.label}</a>}
                   </li>
                 ))}
               </ul>
@@ -455,11 +464,11 @@ function Emblem({ size = 240, style = {} }) {
     <div className="smy-emblem" style={{ width: size, height: size, ...style }}>
       <div
         className={`smy-emblem__layer ${mode === 'jewelry' ? 'is-active' : ''}`}
-        style={{ backgroundImage: 'url(assets/emblem-jewelry.png)' }}
+        style={{ backgroundImage: 'url(/assets/emblem-jewelry.png)' }}
       />
       <div
         className={`smy-emblem__layer ${mode === 'woodwork' ? 'is-active' : ''}`}
-        style={{ backgroundImage: 'url(assets/emblem-woodwork.png)' }}
+        style={{ backgroundImage: 'url(/assets/emblem-woodwork.png)' }}
       />
     </div>
   );

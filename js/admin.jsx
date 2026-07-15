@@ -149,7 +149,7 @@ function AdminEditor({ password, navigate, onLock }) {
             </p>
           </div>
           <div className="adm-head__actions">
-            <a className="smy-cta" href="#/" onClick={e => { e.preventDefault(); navigate('/'); }}>
+            <a className="smy-cta" href="/jewelry" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
               View the site <span className="smy-cta__arrow">→</span>
             </a>
             <button type="button" className="adm-linkbtn" onClick={onLock}>Lock the door</button>

@@ -1,5 +1,8 @@
 # Studio admin
 
+> Local development: run `python3 dev-server.py` (not `python3 -m http.server`) —
+> the site's clean URLs need the SPA fallback to survive reloads and deep links.
+
 The site has an admin panel at **`/#/admin`** (password: `1111`). It edits every
 photograph (jewelry gallery, woodwork gallery, About portrait) and every piece of
 text on the Gallery pages, the About page, and the footer.
