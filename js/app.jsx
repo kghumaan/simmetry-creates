@@ -1,5 +1,6 @@
-/* global React, ReactDOM, ModeProvider, ContentProvider, TopNav, Footer, useRoute,
-   currentSection, useMode, LandingA, LandingB, LandingC, Gallery, About, AdminPage,
+/* global React, ReactDOM, ModeProvider, ContentProvider, EditProvider, EditBar,
+   TopNav, Footer, useRoute, currentSection, useMode, LandingA, LandingB, LandingC,
+   Gallery, ProductPage, About, AdminPage,
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
@@ -22,7 +23,8 @@ function PageRouter({ navigate, route, variant }) {
   }, [route]);
 
   if (section === 'about') return <About navigate={navigate} />;
-  return <Gallery navigate={navigate} route={route} />;
+  if (section === 'product') return <ProductPage navigate={navigate} route={route} />;
+  return <Gallery navigate={navigate} />;
 }
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;
@@ -34,19 +36,22 @@ function App() {
 
   return (
     <ContentProvider>
-      <ModeProvider>
-        {!isAdmin && <TopNav route={route} navigate={navigate} />}
-        <main className="smy-page">
-          {isAdmin
-            ? <AdminPage navigate={navigate} />
-            : (
-              <>
-                <PageRouter navigate={navigate} route={route} />
-                <Footer navigate={navigate} />
-              </>
-            )}
-        </main>
-      </ModeProvider>
+      <EditProvider>
+        <ModeProvider>
+          {!isAdmin && <TopNav route={route} navigate={navigate} />}
+          <main className="smy-page">
+            {isAdmin
+              ? <AdminPage navigate={navigate} />
+              : (
+                <>
+                  <PageRouter navigate={navigate} route={route} />
+                  <Footer navigate={navigate} />
+                </>
+              )}
+          </main>
+          <EditBar />
+        </ModeProvider>
+      </EditProvider>
     </ContentProvider>
   );
 }

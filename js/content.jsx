@@ -47,22 +47,83 @@ function smyLoadLocal() {
   catch { return null; }
 }
 
-/* Content saved before the clean-URL migration holds relative image paths
-   ('uploads/…', 'assets/…') that break on nested routes — root them. */
+/* Saved content from older versions of the site needs two upgrades:
+   - images.{mode} used to be plain arrays of URL strings; they are now
+     products.{mode} arrays of objects (image, title, details, …)
+   - pre-clean-URL saves hold relative image paths that break on nested
+     routes.
+   Both run pure — deepMerge can hand back SMY_DEFAULTS subtrees by
+   reference, so mutating in place would rewrite the shared defaults. */
+
+function smyMigrateContent(c) {
+  if (!c) return c;
+  const out = { ...c };
+  if (out.images && !out.products) {
+    out.products = {};
+    for (const k of Object.keys(out.images)) {
+      if (Array.isArray(out.images[k])) {
+        out.products[k] = out.images[k].map(src => ({ image: src }));
+      }
+    }
+  }
+  delete out.images;
+  if (out.products) {
+    out.products = { ...out.products };
+    for (const k of Object.keys(out.products)) {
+      if (Array.isArray(out.products[k])) {
+        out.products[k] = out.products[k].map(p =>
+          typeof p === 'string' ? { image: p } : p);
+      }
+    }
+  }
+  // Flat bio1/step1 fields became bios[]/steps[] arrays.
+  if (out.about) {
+    const a = { ...out.about };
+    if (!a.bios && (a.bio1Label || a.bio1 || a.bio2Label || a.bio2 || a.bio3Label || a.bio3)) {
+      a.bios = [
+        { label: a.bio1Label || '', body: a.bio1 || '' },
+        { label: a.bio2Label || '', body: a.bio2 || '' },
+        { label: a.bio3Label || '', body: a.bio3 || '' },
+      ];
+    }
+    if (!a.steps && (a.step1Title || a.step1Body || a.step2Title || a.step2Body || a.step3Title)) {
+      a.steps = [
+        { title: a.step1Title || '', body: a.step1Body || '' },
+        { title: a.step2Title || '', body: a.step2Body || '' },
+        { title: a.step3Title || '', body: a.step3BodyJewelry || a.step3BodyWoodwork || '' },
+      ];
+    }
+    ['bio1Label', 'bio1', 'bio2Label', 'bio2', 'bio3Label', 'bio3',
+     'step1Title', 'step1Body', 'step2Title', 'step2Body',
+     'step3Title', 'step3BodyJewelry', 'step3BodyWoodwork'].forEach(k => delete a[k]);
+    out.about = a;
+  }
+  return out;
+}
+
 function smyAbsolutizePaths(c) {
-  // Pure: deepMerge can hand back SMY_DEFAULTS subtrees by reference, so
-  // mutating in place would silently rewrite the shared defaults object.
   const fix = (v) => typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
   if (!c) return c;
   const out = { ...c };
-  if (out.images) {
-    out.images = { ...out.images };
-    for (const k of Object.keys(out.images)) {
-      if (Array.isArray(out.images[k])) out.images[k] = out.images[k].map(fix);
+  if (out.products) {
+    out.products = { ...out.products };
+    for (const k of Object.keys(out.products)) {
+      if (Array.isArray(out.products[k])) {
+        out.products[k] = out.products[k].map(p => ({
+          ...p,
+          image: fix(p.image),
+          images: Array.isArray(p.images) ? p.images.map(fix) : p.images,
+        }));
+      }
     }
   }
   if (out.about) out.about = { ...out.about, portrait: fix(out.about.portrait) };
   return out;
+}
+
+/* Full resolution pipeline for any loaded override. */
+function smyResolveContent(saved) {
+  return smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, smyMigrateContent(saved) || {}));
 }
 
 async function smyFetchRemote() {
@@ -162,7 +223,7 @@ async function smyShrinkImage(file, maxDim = 1600, quality = 0.85) {
 
 function ContentProvider({ children }) {
   const [content, setContentState] = React.useState(() =>
-    smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, smyLoadLocal() || {})));
+    smyResolveContent(smyLoadLocal()));
   // 'loading' → then 'live' (API serving published content) or 'local'
   const [source, setSource] = React.useState('loading');
 
@@ -171,7 +232,7 @@ function ContentProvider({ children }) {
     smyFetchRemote().then(remote => {
       if (cancelled) return;
       if (remote) {
-        setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, remote)));
+        setContentState(smyResolveContent(remote));
         setSource('live');
       } else {
         setSource('local');
@@ -181,7 +242,7 @@ function ContentProvider({ children }) {
   }, []);
 
   const applyContent = React.useCallback((next) => {
-    setContentState(smyAbsolutizePaths(smyDeepMerge(SMY_DEFAULTS, next)));
+    setContentState(smyResolveContent(next));
   }, []);
 
   const value = React.useMemo(
@@ -219,7 +280,8 @@ function Lines({ text }) {
 }
 
 Object.assign(window, {
-  ContentProvider, useContent, Lines,
+  ContentProvider, ContentContext, useContent, Lines,
   publishContent, uploadImage, verifyPassword,
-  smyDeepMerge, smyGet, smySet, smyHas, smyInquiryVisible, SMY_LS_KEY,
+  smyDeepMerge, smyGet, smySet, smyHas, smyInquiryVisible,
+  smyResolveContent, SMY_LS_KEY,
 });

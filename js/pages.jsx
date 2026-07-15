@@ -1,105 +1,242 @@
-/* global React, useMode, useContent, Lines, smyHas, smyInquiryVisible, Tile, Emblem, Reveal */
+/* global React, useMode, useContent, useEdit, E, EBtn, EUpload, Lines, smyHas,
+   smyInquiryVisible, Tile, Emblem, Reveal */
 
 /* =========================================================================
    Gallery — collection grid, driven by the editable content store.
-   Any text field left empty in the admin disappears from the page; when a
-   whole block is empty, the block's section is dropped entirely.
+   Empty text disappears for visitors; in edit mode everything stays visible
+   with placeholders, and the grid gains reorder/remove/add controls.
    ========================================================================= */
 
-function Gallery({ navigate, route }) {
+function Gallery({ navigate }) {
   const { mode } = useMode();
   const { content } = useContent();
-  const images = content.images[mode] || [];
+  const edit = useEdit();
+  const products = content.products[mode] || [];
   const G = content.gallery;
+  const titlePath = `gallery.${mode === 'jewelry' ? 'jewelryTitle' : 'woodworkTitle'}`;
   const title = mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle;
-  const showCount = smyHas(G.countSuffix);
-  const showTitle = smyHas(title);
   const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
+  const listPath = `products.${mode}`;
 
-  const itemMatch = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)\/?$/);
-  const itemIndex = itemMatch ? Math.min(images.length - 1, Math.max(0, parseInt(itemMatch[1], 10))) : null;
-  const itemImage = itemIndex !== null ? images[itemIndex] : null;
-
-  const closeItem = React.useCallback(() => navigate(prefix), [navigate, prefix]);
-
-  React.useEffect(() => {
-    if (!itemImage) return;
-    const onKey = (e) => { if (e.key === 'Escape') closeItem(); };
-    window.addEventListener('keydown', onKey);
-    const prevOverflow = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.documentElement.style.overflow = prevOverflow;
-    };
-  }, [itemImage, closeItem]);
+  const moveProduct = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= products.length) return;
+    edit.setField(listPath, cur => {
+      const next = [...cur];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+  const removeProduct = (i) =>
+    edit.setField(listPath, cur => cur.filter((_, k) => k !== i));
+  const addProducts = (urls) =>
+    edit.setField(listPath, cur => [
+      ...(cur || []),
+      ...urls.map(url => ({ image: url, title: '', description: '', price: '', details: [], images: [] })),
+    ]);
 
   return (
     <div className="gal">
-      {(showCount || showTitle) && (
+      {(edit.active || smyHas(G.countSuffix) || smyHas(title)) && (
         <section className="smy-container gal-head">
-          {showCount && (
+          {(edit.active || smyHas(G.countSuffix)) && (
             <div className="gal-head__top">
               <span className="caption num" style={{ color: 'var(--fg-muted)' }}>
-                {images.length} {G.countSuffix}
+                {products.length} <E path="gallery.countSuffix" ph="pieces" />
               </span>
             </div>
           )}
-          {showTitle && <h1 className="gal-head__h">{title}</h1>}
+          {(edit.active || smyHas(title)) && (
+            <h1 className="gal-head__h"><E path={titlePath} ph="Page title…" /></h1>
+          )}
         </section>
       )}
 
       <section className="smy-container gal-grid">
-        {images.map((src, i) => {
+        {products.map((p, i) => {
           const href = prefix + '/' + i;
           return (
-            <Reveal key={src + i} delay={(i % 6) * 50} className="gal-card">
+            <Reveal key={(p.image || '') + i} delay={(i % 6) * 50} className="gal-card">
               <a
                 className="gal-card__link"
                 href={href}
-                aria-label={`Open piece ${i + 1}`}
-                onClick={(e) => { e.preventDefault(); navigate(prefix + '/' + i); }}
+                aria-label={`Open ${smyHas(p.title) ? p.title : 'piece ' + (i + 1)}`}
+                onClick={(e) => { e.preventDefault(); navigate(href); }}
               >
-                <Tile kind="portrait" image={src} />
+                <Tile kind="portrait" image={p.image} />
               </a>
+              {edit.active && (
+                <div className="e-cardbar">
+                  <EBtn title="Move earlier" onClick={() => moveProduct(i, -1)}>←</EBtn>
+                  <span className="num">{String(i + 1).padStart(2, '0')}</span>
+                  <EBtn title="Move later" onClick={() => moveProduct(i, 1)}>→</EBtn>
+                  <EBtn title="Open to edit details" onClick={() => navigate(href)}>✎</EBtn>
+                  <EBtn danger title="Remove this piece" onClick={() => removeProduct(i)}>×</EBtn>
+                </div>
+              )}
             </Reveal>
           );
         })}
+        {edit.active && (
+          <div className="gal-card e-addtile">
+            <EUpload label="+ Add photographs" multiple onDone={addProducts} />
+            <p className="e-addtile__hint">New pieces land at the end — open one to give it a title, details, and a price.</p>
+          </div>
+        )}
       </section>
 
-      {smyHas(G.ctaLabel) && (
+      {(edit.active || smyHas(G.ctaLabel)) && (
         <section className="smy-container gal-end">
           <hr className="smy-rule" />
           <div className="gal-end__row">
             <a className="smy-cta smy-cta--solid" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
-              {G.ctaLabel} <span className="smy-cta__arrow">→</span>
+              <E path="gallery.ctaLabel" ph="Button label…" /> <span className="smy-cta__arrow">→</span>
             </a>
           </div>
         </section>
       )}
+    </div>
+  );
+}
 
-      {itemImage && (
-        <div
-          className="gal-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`Piece ${itemIndex + 1}`}
-          onClick={closeItem}
-        >
-          <button
-            type="button"
-            className="gal-lightbox__close"
-            onClick={(e) => { e.stopPropagation(); closeItem(); }}
-            aria-label="Close"
-          >×</button>
-          <img
-            className="gal-lightbox__img"
-            src={itemImage}
-            alt={`${mode === 'jewelry' ? 'Jewelry' : 'Woodwork'} piece ${itemIndex + 1}`}
-            onClick={(e) => e.stopPropagation()}
-          />
+/* =========================================================================
+   Product page — /jewelry/3, /woodwork/0. Specs and price under the
+   photographs, title and description alongside. In edit mode every field
+   is editable in place; detail lines and angle photos can be added.
+   ========================================================================= */
+
+function ProductPage({ navigate, route }) {
+  const { mode } = useMode();
+  const { content } = useContent();
+  const edit = useEdit();
+  const products = content.products[mode] || [];
+  const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
+
+  const m = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)$/);
+  const idx = m ? parseInt(m[1], 10) : -1;
+  const product = idx >= 0 && idx < products.length ? products[idx] : null;
+  const base = `products.${mode}.${idx}`;
+
+  const [active, setActive] = React.useState(0);
+  React.useEffect(() => { setActive(0); }, [route]);
+
+  // A stale or hand-typed index falls back to the gallery.
+  React.useEffect(() => {
+    if (!product) navigate(prefix);
+  }, [product, prefix]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!product) return null;
+
+  const angles = Array.isArray(product.images) ? product.images : [];
+  const photos = [product.image, ...angles].filter(src => smyHas(src));
+  const details = Array.isArray(product.details) ? product.details : [];
+  const specs = edit.active
+    ? details
+    : details.filter(d => d && (smyHas(d.label) || smyHas(d.value)));
+  const num = String(idx + 1).padStart(2, '0');
+  const showTitle = edit.active || smyHas(product.title);
+
+  const patch = (partial) => edit.setField(base, cur => ({ ...cur, ...partial }));
+
+  return (
+    <div className="pd">
+      <section className="smy-container pd-crumb">
+        <a className="pd-back caption" href={prefix} onClick={e => { e.preventDefault(); navigate(prefix); }}>
+          ← All {mode === 'jewelry' ? 'jewelry' : 'woodwork'}
+        </a>
+      </section>
+
+      <section className="smy-container pd-main">
+        <div className="pd-media">
+          <Tile kind="vhero" image={photos[active] || product.image} alt={smyHas(product.title) ? product.title : `Piece No. ${num}`} corners />
+
+          {(photos.length > 1 || edit.active) && (
+            <div className="pd-thumbs" role="group" aria-label="More photographs">
+              {photos.map((src, i) => (
+                <span key={src.slice(0, 80) + i} className="pd-thumbwrap">
+                  <button
+                    type="button"
+                    className={`pd-thumb ${i === active ? 'is-active' : ''}`}
+                    aria-label={`Photograph ${i + 1}`}
+                    aria-pressed={i === active}
+                    onClick={() => setActive(i)}
+                  >
+                    <img src={src} alt="" loading="lazy" />
+                  </button>
+                  {edit.active && i > 0 && (
+                    <EBtn danger title="Remove this angle" onClick={() => {
+                      setActive(0);
+                      patch({ images: angles.filter((_, k) => k !== i - 1) });
+                    }}>×</EBtn>
+                  )}
+                </span>
+              ))}
+              {edit.active && (
+                <span className="pd-thumbwrap pd-thumbwrap--add">
+                  <EUpload label="+ Angles" multiple onDone={(urls) => patch({ images: [...angles, ...urls] })} />
+                </span>
+              )}
+            </div>
+          )}
+
+          {edit.active && (
+            <div className="e-row">
+              <EUpload label="Replace main photograph" onDone={(urls) => { patch({ image: urls[0] }); setActive(0); }} />
+            </div>
+          )}
+
+          {(specs.length > 0 || edit.active || smyHas(product.price)) && (
+            <dl className="pd-specs">
+              {specs.map((d, i) => (
+                <div className="pd-spec" key={i}>
+                  <dt className="caption">
+                    <E path={`${base}.details.${i}.label`} ph="Label…" />
+                  </dt>
+                  <dd>
+                    <E path={`${base}.details.${i}.value`} ph="Value…" />
+                    {edit.active && (
+                      <EBtn danger title="Remove this line" onClick={() =>
+                        patch({ details: details.filter((_, k) => k !== i) })
+                      }>×</EBtn>
+                    )}
+                  </dd>
+                </div>
+              ))}
+              {(edit.active || smyHas(product.price)) && (
+                <div className="pd-spec pd-spec--price">
+                  <dt className="caption">Price</dt>
+                  <dd><E path={`${base}.price`} ph="Optional — e.g. On request" /></dd>
+                </div>
+              )}
+              {edit.active && (
+                <div className="e-row">
+                  <EBtn title="Add a detail line" onClick={() =>
+                    patch({ details: [...details, { label: '', value: '' }] })
+                  }>+ Add a detail line</EBtn>
+                </div>
+              )}
+            </dl>
+          )}
         </div>
-      )}
+
+        <div className="pd-info">
+          <span className="caption caption--accent">
+            — No. {num} · {mode === 'jewelry' ? 'Jewelry' : 'Woodwork'}
+          </span>
+          {showTitle && (
+            <h1 className="pd-title"><E path={`${base}.title`} ph="Title…" /></h1>
+          )}
+          {!showTitle && <h1 className="pd-title">Piece No. {num}</h1>}
+          {(edit.active || smyHas(product.description)) && (
+            <p className="smy-lede pd-desc"><E path={`${base}.description`} ph="A few sentences about this piece…" /></p>
+          )}
+          <div className="pd-cta">
+            <a className="smy-cta smy-cta--solid" href={prefix + '/about'} onClick={e => { e.preventDefault(); navigate(prefix + '/about'); }}>
+              {smyHas(content.gallery.ctaLabel) ? content.gallery.ctaLabel : 'Begin a commission'} <span className="smy-cta__arrow">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -110,7 +247,9 @@ function Gallery({ navigate, route }) {
 
 function About({ navigate }) {
   const { mode } = useMode();
-  const A = useContent().content.about;
+  const { content } = useContent();
+  const edit = useEdit();
+  const A = content.about;
   const [form, setForm] = React.useState({
     name: '', email: '', project: 'jewelry', message: ''
   });
@@ -122,7 +261,7 @@ function About({ navigate }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (sending) return;
+    if (sending || edit.active) return;
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
     setSending(true);
     setSendError(null);
@@ -153,60 +292,73 @@ function About({ navigate }) {
     return () => clearTimeout(t);
   }, []);
 
-  // Empty content collapses: a bio column, a process step, or a contact block
-  // vanishes when its fields are blank; a whole section vanishes when every
-  // block inside it is blank.
-  const bios = [
-    { label: A.bio1Label, body: A.bio1 },
-    { label: A.bio2Label, body: A.bio2 },
-    { label: A.bio3Label, body: A.bio3 },
-  ].filter(b => smyHas(b.label, b.body));
+  // In edit mode every block stays visible (with placeholders); for
+  // visitors, empty blocks collapse.
+  const allBios = Array.isArray(A.bios) ? A.bios : [];
+  const bios = allBios
+    .map((b, idx) => ({ ...b, idx }))
+    .filter(b => edit.active || smyHas(b.label, b.body));
 
-  const steps = [
-    { title: A.step1Title, body: A.step1Body },
-    { title: A.step2Title, body: A.step2Body },
-    { title: A.step3Title, body: mode === 'jewelry' ? A.step3BodyJewelry : A.step3BodyWoodwork },
-  ].filter(s => smyHas(s.title, s.body));
-  const showProcess = smyHas(A.processNum, A.processTitle, A.processIntro) || steps.length > 0;
+  const allSteps = Array.isArray(A.steps) ? A.steps : [];
+  const steps = allSteps
+    .map((s, idx) => ({ ...s, idx }))
+    .filter(s => edit.active || smyHas(s.title, s.body));
+  const showProcess = edit.active || smyHas(A.processNum, A.processTitle, A.processIntro) || steps.length > 0;
 
   const metaBlocks = [
-    { label: A.postLabel, value: A.postValue },
-    { label: A.emailLabel, value: A.emailValue },
-    { label: A.diaryLabel, value: A.diaryValue, num: true },
-  ].filter(m => smyHas(m.label, m.value));
-  // Shared with TopNav so the Contact link disappears along with the section.
-  const showInquiry = smyInquiryVisible(A);
+    { labelPath: 'about.postLabel', valuePath: 'about.postValue', label: A.postLabel, value: A.postValue },
+    { labelPath: 'about.emailLabel', valuePath: 'about.emailValue', label: A.emailLabel, value: A.emailValue },
+    { labelPath: 'about.diaryLabel', valuePath: 'about.diaryValue', label: A.diaryLabel, value: A.diaryValue, num: true },
+  ].filter(m => edit.active || smyHas(m.label, m.value));
+  const showInquiry = edit.active || smyInquiryVisible(A);
+
+  const removeBio = (idx) => edit.setField('about.bios', cur => cur.filter((_, k) => k !== idx));
+  const addBio = () => edit.setField('about.bios', cur => [
+    ...(cur || []),
+    { label: `— 0${(cur || []).length + 1} A new chapter`, body: '' },
+  ]);
+  const removeStep = (idx) => edit.setField('about.steps', cur => cur.filter((_, k) => k !== idx));
+  const addStep = () => edit.setField('about.steps', cur => [...(cur || []), { title: '', body: '' }]);
 
   return (
     <div className="ab">
       {/* Bio header */}
       <section className="smy-container ab-head">
         <div className="ab-head__left">
-          {smyHas(A.eyebrow) && <span className="caption caption--accent">{A.eyebrow}</span>}
-          {smyHas(A.title, A.titleEm) && (
+          {(edit.active || smyHas(A.eyebrow)) && (
+            <span className="caption caption--accent"><E path="about.eyebrow" ph="— Small heading…" /></span>
+          )}
+          {(edit.active || smyHas(A.title, A.titleEm)) && (
             <h1 className="ab-head__h">
-              {smyHas(A.title) && A.title}
-              {smyHas(A.title) && smyHas(A.titleEm) && <br />}
-              {smyHas(A.titleEm) && <em>{A.titleEm}</em>}
+              {(edit.active || smyHas(A.title)) && <E path="about.title" ph="Title, first line…" />}
+              {(edit.active || (smyHas(A.title) && smyHas(A.titleEm))) && <br />}
+              {(edit.active || smyHas(A.titleEm)) && <em><E path="about.titleEm" ph="Title, second line…" /></em>}
             </h1>
           )}
-          {smyHas(A.lede) && <p className="smy-lede ab-head__lede"><Lines text={A.lede} /></p>}
+          {(edit.active || smyHas(A.lede)) && (
+            <p className="smy-lede ab-head__lede"><E path="about.lede" ph="Intro paragraph…" /></p>
+          )}
         </div>
         <div className="ab-head__portrait">
           <Tile kind="vhero" image={A.portrait} alt={A.title} corners />
-          {smyHas(A.portraitCaption) && (
+          {edit.active && (
+            <div className="e-row">
+              <EUpload label="Replace portrait" onDone={(urls) => edit.setField('about.portrait', urls[0])} />
+            </div>
+          )}
+          {(edit.active || smyHas(A.portraitCaption)) && (
             <div className="caption" style={{ marginTop: 14, color: 'var(--fg-muted)' }}>
-              <span className="num">No. 09</span> &nbsp;·&nbsp; {A.portraitCaption}
+              <span className="num">No. 09</span> &nbsp;·&nbsp; <E path="about.portraitCaption" ph="Caption…" />
             </div>
           )}
         </div>
       </section>
 
       {/* Bio body — editorial paragraphs flanking an emblem */}
-      {bios.length > 0 && (
+      {(bios.length > 0 || edit.active) && (
         <section className="smy-container ab-bio">
           {bios.map((b, i) => (
-            <React.Fragment key={i}>
+            <React.Fragment key={b.idx}>
               {i === 1 && (
                 <Reveal className="ab-bio__center" delay={100}>
                   <Emblem size={220} />
@@ -216,44 +368,60 @@ function About({ navigate }) {
                 className={`ab-bio__col ${i === 2 ? 'ab-bio__col--full' : ''}`}
                 delay={i * 90}
               >
-                {smyHas(b.label) && <span className="caption" style={{ color: 'var(--fg-muted)' }}>{b.label}</span>}
-                {smyHas(b.body) && (
-                  <p className="smy-lede" style={{ marginTop: 16, ...(i === 2 ? { maxWidth: '64ch' } : null) }}>
-                    <Lines text={b.body} />
-                  </p>
-                )}
+                <span className="caption" style={{ color: 'var(--fg-muted)' }}>
+                  <E path={`about.bios.${b.idx}.label`} ph="— Label…" />
+                  {edit.active && <EBtn danger title="Remove this paragraph" onClick={() => removeBio(b.idx)}>×</EBtn>}
+                </span>
+                <p className="smy-lede" style={{ marginTop: 16, ...(i === 2 ? { maxWidth: '64ch' } : null) }}>
+                  <E path={`about.bios.${b.idx}.body`} ph="Paragraph…" />
+                </p>
               </Reveal>
             </React.Fragment>
           ))}
+          {edit.active && (
+            <div className="ab-bio__col e-row">
+              <EBtn title="Add a story paragraph" onClick={addBio}>+ Add a paragraph</EBtn>
+            </div>
+          )}
         </section>
       )}
 
       {/* Process strip — steps, hairline-divided */}
       {showProcess && (
         <section className="smy-container ab-process">
-          {smyHas(A.processNum, A.processTitle, A.processIntro) && (
+          {(edit.active || smyHas(A.processNum, A.processTitle, A.processIntro)) && (
             <div className="smy-secthead">
               <div>
-                {smyHas(A.processNum) && <div className="smy-secthead__num">{A.processNum}</div>}
-                {smyHas(A.processTitle) && <h2>{A.processTitle}</h2>}
+                {(edit.active || smyHas(A.processNum)) && (
+                  <div className="smy-secthead__num"><E path="about.processNum" ph="— Small heading…" /></div>
+                )}
+                {(edit.active || smyHas(A.processTitle)) && (
+                  <h2><E path="about.processTitle" ph="Section title…" /></h2>
+                )}
               </div>
-              {smyHas(A.processIntro) && (
+              {(edit.active || smyHas(A.processIntro)) && (
                 <p className="smy-lede" style={{ fontSize: 15, maxWidth: '38ch' }}>
-                  <Lines text={A.processIntro} />
+                  <E path="about.processIntro" ph="Section intro…" />
                 </p>
               )}
             </div>
           )}
 
-          {steps.length > 0 && (
+          {(steps.length > 0 || edit.active) && (
             <div className="ab-process__steps">
               {steps.map((s, i) => (
-                <Reveal key={i} className="ab-step">
+                <Reveal key={s.idx} className="ab-step">
                   <span className="ab-step__num num">{String(i + 1).padStart(2, '0')}</span>
-                  {smyHas(s.title) && <h3 className="ab-step__h">{s.title}</h3>}
-                  {smyHas(s.body) && <p className="ab-step__b"><Lines text={s.body} /></p>}
+                  {edit.active && <EBtn danger title="Remove this step" onClick={() => removeStep(s.idx)}>×</EBtn>}
+                  <h3 className="ab-step__h"><E path={`about.steps.${s.idx}.title`} ph="Step title…" /></h3>
+                  <p className="ab-step__b"><E path={`about.steps.${s.idx}.body`} ph="Step text…" /></p>
                 </Reveal>
               ))}
+              {edit.active && (
+                <div className="ab-step e-row">
+                  <EBtn title="Add a step" onClick={addStep}>+ Add a step</EBtn>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -265,15 +433,23 @@ function About({ navigate }) {
         <section className="ab-inquiry" id="contact">
           <div className="smy-container ab-inquiry__inner">
             <div className="ab-inquiry__left">
-              {smyHas(A.inquiryEyebrow) && <span className="caption caption--accent">{A.inquiryEyebrow}</span>}
-              {smyHas(A.inquiryTitle) && <h2 className="ab-inquiry__h">{A.inquiryTitle}</h2>}
-              {smyHas(A.inquiryLede) && <p className="smy-lede"><Lines text={A.inquiryLede} /></p>}
+              {(edit.active || smyHas(A.inquiryEyebrow)) && (
+                <span className="caption caption--accent"><E path="about.inquiryEyebrow" ph="— Small heading…" /></span>
+              )}
+              {(edit.active || smyHas(A.inquiryTitle)) && (
+                <h2 className="ab-inquiry__h"><E path="about.inquiryTitle" ph="Section title…" /></h2>
+              )}
+              {(edit.active || smyHas(A.inquiryLede)) && (
+                <p className="smy-lede"><E path="about.inquiryLede" ph="Section intro…" /></p>
+              )}
               {metaBlocks.length > 0 && (
                 <div className="ab-inquiry__meta">
-                  {metaBlocks.map((m, i) => (
+                  {metaBlocks.map((mb, i) => (
                     <div key={i}>
-                      {smyHas(m.label) && <span className="caption" style={{ color: 'var(--fg-muted)' }}>{m.label}</span>}
-                      {smyHas(m.value) && <p className={m.num ? 'num' : undefined}><Lines text={m.value} /></p>}
+                      <span className="caption" style={{ color: 'var(--fg-muted)' }}>
+                        <E path={mb.labelPath} ph="Label…" />
+                      </span>
+                      <p className={mb.num ? 'num' : undefined}><E path={mb.valuePath} ph="Value…" /></p>
                     </div>
                   ))}
                 </div>
@@ -281,7 +457,7 @@ function About({ navigate }) {
             </div>
 
             <form className="ab-form" onSubmit={onSubmit}>
-              {sent ? (
+              {sent && !edit.active ? (
                 <div className="ab-form__sent">
                   <span className="caption caption--accent">— Received</span>
                   <h3 className="ab-form__sent-h">Thank you, {form.name.split(' ')[0]}.</h3>
@@ -328,12 +504,21 @@ function About({ navigate }) {
 
                   <div className="ab-form__foot">
                     <span className="caption" style={{ color: 'var(--fg-muted)' }}>
-                      {smyHas(A.replyNote) ? A.replyNote : ''}
+                      {(edit.active || smyHas(A.replyNote)) && <E path="about.replyNote" ph="Note next to the button…" />}
                     </span>
-                    <button type="submit" className="smy-cta smy-cta--solid" disabled={sending}>
-                      {sending ? 'Sending…' : (smyHas(A.submitLabel) ? A.submitLabel : 'Send')} <span className="smy-cta__arrow">→</span>
+                    <button type="submit" className="smy-cta smy-cta--solid" disabled={sending || edit.active}>
+                      {sending ? 'Sending…' : <E path="about.submitLabel" ph="Send" />} <span className="smy-cta__arrow">→</span>
                     </button>
                   </div>
+
+                  {edit.active && (
+                    <div className="e-sentpreview">
+                      <span className="caption" style={{ color: 'var(--fg-muted)' }}>
+                        Shown after a letter is sent:
+                      </span>
+                      <p className="smy-lede"><E path="about.sentBody" ph="Thank-you message…" /></p>
+                    </div>
+                  )}
                 </>
               )}
             </form>
@@ -345,4 +530,5 @@ function About({ navigate }) {
 }
 
 window.Gallery = Gallery;
+window.ProductPage = ProductPage;
 window.About = About;

@@ -3,9 +3,21 @@
 > Local development: run `python3 dev-server.py` (not `python3 -m http.server`) —
 > the site's clean URLs need the SPA fallback to survive reloads and deep links.
 
-The site has an admin panel at **`/#/admin`** (password: `1111`). It edits every
-photograph (jewelry gallery, woodwork gallery, About portrait) and every piece of
-text on the Gallery pages, the About page, and the footer.
+Unlock editing at **`/admin`** (password: `1111`) — the site itself becomes the
+admin. You land on the live pages exactly as visitors see them, and everything
+becomes editable in place:
+
+- **Click any text** to change it right where it is. Empty it to remove it —
+  when every field in a section is empty, the whole section disappears
+  (placeholders keep empty spots visible while editing).
+- **Photographs**: reorder / remove / add pieces on the gallery; open a piece
+  to edit its title, description, detail lines (metal, weight, shape, …),
+  optional price, and extra angle photos; replace the About portrait.
+- **Add** story paragraphs, process steps, and product detail lines with the
+  small “+” buttons.
+- Nothing changes for visitors until **Save & publish** in the bottom bar;
+  Discard drops unsaved edits; “Reset to original…” restores the shipped
+  content (after Save).
 
 ## How it works
 
