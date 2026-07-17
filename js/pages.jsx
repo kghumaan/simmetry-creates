@@ -1,29 +1,55 @@
 /* global React, useMode, useContent, useEdit, E, EBtn, EUpload, Lines, smyHas,
-   smyInquiryVisible, Tile, Emblem, Reveal */
+   smyInquiryVisible, Tile, Emblem, Reveal, smyModePrefix, smyCategoryHref,
+   smyRouteCategory */
 
 /* =========================================================================
-   Gallery — collection grid, driven by the editable content store.
-   Empty text disappears for visitors; in edit mode everything stays visible
-   with placeholders, and the grid gains reorder/remove/add controls.
+   Gallery — the pieces in one bucket (/jewelry/c/necklaces), or all of them
+   (/jewelry/all). Empty text disappears for visitors; in edit mode
+   everything stays visible with placeholders, and the grid gains
+   reorder/remove/add controls.
+
+   Products live in one flat list per mode, so a filtered view carries each
+   card's index into that list — every edit path and product URL is built
+   from the real index, never the position on screen.
    ========================================================================= */
 
-function Gallery({ navigate }) {
+function Gallery({ navigate, route }) {
   const { mode } = useMode();
   const { content } = useContent();
   const edit = useEdit();
-  const products = content.products[mode] || [];
+  const all = content.products[mode] || [];
+  const cats = (content.categories && content.categories[mode]) || [];
   const G = content.gallery;
-  const titlePath = `gallery.${mode === 'jewelry' ? 'jewelryTitle' : 'woodworkTitle'}`;
-  const title = mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle;
-  const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
+  const prefix = smyModePrefix(mode);
   const listPath = `products.${mode}`;
 
-  const moveProduct = (i, dir) => {
-    const j = i + dir;
-    if (j < 0 || j >= products.length) return;
+  // A key with no bucket behind it — a link to a bucket since removed or
+  // renamed — is not a collection at all, so show the full listing rather
+  // than a dead page headlined with the raw key from the URL.
+  const routeKey = smyRouteCategory(route);
+  const cat = routeKey ? cats.find(c => c.key === routeKey) : null;
+  const catKey = cat ? routeKey : null;
+
+  // [{ p, i }] — i is the index into the flat list.
+  const shown = all
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => !catKey || (p && p.category === catKey));
+
+  const title = cat
+    ? (smyHas(cat.label) ? cat.label : cat.key)
+    : (mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle);
+  const titlePath = cat
+    ? null
+    : `gallery.${mode === 'jewelry' ? 'jewelryTitle' : 'woodworkTitle'}`;
+
+  // Reordering swaps a card with its neighbour *in this view*, using both
+  // real indices — so it behaves the same filtered or not.
+  const moveProduct = (pos, dir) => {
+    const a = shown[pos], b = shown[pos + dir];
+    if (!a || !b) return;
     edit.setField(listPath, cur => {
       const next = [...cur];
-      [next[i], next[j]] = [next[j], next[i]];
+      [next[a.i], next[b.i]] = [next[b.i], next[a.i]];
       return next;
     });
   };
@@ -32,31 +58,61 @@ function Gallery({ navigate }) {
   const addProducts = (urls) =>
     edit.setField(listPath, cur => [
       ...(cur || []),
-      ...urls.map(url => ({ image: url, title: '', description: '', price: '', details: [], images: [] })),
+      ...urls.map(url => ({
+        category: catKey || '', image: url,
+        title: '', description: '', price: '', details: [], images: [],
+      })),
     ]);
 
   return (
     <div className="gal">
       {(edit.active || smyHas(G.countSuffix) || smyHas(title)) && (
-        <section className="smy-container gal-head">
+        <section className="gal-head">
           {(edit.active || smyHas(G.countSuffix)) && (
             <div className="gal-head__top">
               <span className="caption num" style={{ color: 'var(--fg-muted)' }}>
-                {products.length} <E path="gallery.countSuffix" ph="pieces" />
+                {shown.length} <E path="gallery.countSuffix" ph="pieces" />
               </span>
             </div>
           )}
           {(edit.active || smyHas(title)) && (
-            <h1 className="gal-head__h"><E path={titlePath} ph="Page title…" /></h1>
+            <h1 className="gal-head__h">
+              {titlePath ? <E path={titlePath} ph="Page title…" /> : title}
+            </h1>
           )}
         </section>
       )}
 
-      <section className="smy-container gal-grid">
-        {products.map((p, i) => {
+      {/* Bucket strip — jump between collections without going home */}
+      {cats.length > 0 && (
+        <nav className="gal-strip" aria-label="Collections">
+          <a
+            className={`gal-strip__link ${!catKey ? 'is-active' : ''}`}
+            href={prefix + '/all'}
+            aria-current={!catKey ? 'page' : undefined}
+            onClick={e => { e.preventDefault(); navigate(prefix + '/all'); }}
+          >
+            {smyHas(G.allLabel) ? G.allLabel : 'All pieces'}
+          </a>
+          {cats.map((c, i) => (
+            <a
+              key={c.key + i}
+              className={`gal-strip__link ${catKey === c.key ? 'is-active' : ''}`}
+              href={smyCategoryHref(mode, c.key)}
+              aria-current={catKey === c.key ? 'page' : undefined}
+              onClick={e => { e.preventDefault(); navigate(smyCategoryHref(mode, c.key)); }}
+            >
+              {smyHas(c.label) ? c.label : c.key}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      <section className="gal-grid">
+        {shown.map(({ p, i }, pos) => {
           const href = prefix + '/' + i;
           return (
-            <Reveal key={(p.image || '') + i} delay={(i % 6) * 50} className="gal-card">
+            <Reveal key={(p.image || '') + i} delay={(pos % 6) * 50} className="gal-card">
               <a
                 className="gal-card__link"
                 href={href}
@@ -65,11 +121,14 @@ function Gallery({ navigate }) {
               >
                 <Tile kind="portrait" image={p.image} />
               </a>
+              {smyHas(p.title) && (
+                <span className="gal-card__name">{p.title}</span>
+              )}
               {edit.active && (
                 <div className="e-cardbar">
-                  <EBtn title="Move earlier" onClick={() => moveProduct(i, -1)}>←</EBtn>
+                  <EBtn title="Move earlier" onClick={() => moveProduct(pos, -1)}>←</EBtn>
                   <span className="num">{String(i + 1).padStart(2, '0')}</span>
-                  <EBtn title="Move later" onClick={() => moveProduct(i, 1)}>→</EBtn>
+                  <EBtn title="Move later" onClick={() => moveProduct(pos, 1)}>→</EBtn>
                   <EBtn title="Open to edit details" onClick={() => navigate(href)}>✎</EBtn>
                   <EBtn danger title="Remove this piece" onClick={() => removeProduct(i)}>×</EBtn>
                 </div>
@@ -80,16 +139,26 @@ function Gallery({ navigate }) {
         {edit.active && (
           <div className="gal-card e-addtile">
             <EUpload label="+ Add photographs" multiple onDone={addProducts} />
-            <p className="e-addtile__hint">New pieces land at the end — open one to give it a title, details, and a price.</p>
+            <p className="e-addtile__hint">
+              {catKey
+                ? 'New pieces land at the end of this bucket — open one to give it a title, details, and a price.'
+                : 'New pieces land at the end with no bucket — open one to file it and give it a title.'}
+            </p>
           </div>
         )}
       </section>
+
+      {shown.length === 0 && !edit.active && smyHas(G.emptyBucket) && (
+        <section className="smy-container gal-empty">
+          <p className="smy-lede">{G.emptyBucket}</p>
+        </section>
+      )}
 
       {(edit.active || smyHas(G.ctaLabel)) && (
         <section className="smy-container gal-end">
           <hr className="smy-rule" />
           <div className="gal-end__row">
-            <a className="smy-cta smy-cta--solid" href={'/' + mode + '/about'} onClick={e => { e.preventDefault(); navigate('/' + mode + '/about'); }}>
+            <a className="smy-cta smy-cta--solid" href={prefix + '/about'} onClick={e => { e.preventDefault(); navigate(prefix + '/about'); }}>
               <E path="gallery.ctaLabel" ph="Button label…" /> <span className="smy-cta__arrow">→</span>
             </a>
           </div>
@@ -100,9 +169,10 @@ function Gallery({ navigate }) {
 }
 
 /* =========================================================================
-   Product page — /jewelry/3, /woodwork/0. Photographs on the left; title,
-   description, then specs and price on the right. In edit mode every field
-   is editable in place; detail lines and angle photos can be added.
+   Product page — /jewelry/3, /woodwork/0. Thumbnails run down the left, the
+   selected photograph fills the stage beside them, and the title,
+   description, specs and price sit in the right column. In edit mode every
+   field is editable in place; detail lines and angle photos can be added.
    ========================================================================= */
 
 function ProductPage({ navigate, route }) {
@@ -110,7 +180,8 @@ function ProductPage({ navigate, route }) {
   const { content } = useContent();
   const edit = useEdit();
   const products = content.products[mode] || [];
-  const prefix = mode === 'woodwork' ? '/woodwork' : '/jewelry';
+  const cats = (content.categories && content.categories[mode]) || [];
+  const prefix = smyModePrefix(mode);
 
   const m = (route || '').match(/^\/(?:jewelry|ww|woodwork)\/(\d+)$/);
   const idx = m ? parseInt(m[1], 10) : -1;
@@ -120,9 +191,11 @@ function ProductPage({ navigate, route }) {
   const [active, setActive] = React.useState(0);
   React.useEffect(() => { setActive(0); }, [route]);
 
-  // A stale or hand-typed index falls back to the gallery.
+  // A stale or hand-typed index falls back to the listing — the bare mode
+  // prefix is the home hero now, which would drop the reader out of the work
+  // entirely.
   React.useEffect(() => {
-    if (!product) navigate(prefix);
+    if (!product) navigate(prefix + '/all');
   }, [product, prefix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!product) return null;
@@ -136,48 +209,63 @@ function ProductPage({ navigate, route }) {
   const num = String(idx + 1).padStart(2, '0');
   const showTitle = edit.active || smyHas(product.title);
 
+  // The bucket this piece is filed under drives the breadcrumb; an
+  // unfiled piece falls back to the full list.
+  const cat = smyHas(product.category)
+    ? cats.find(c => c.key === product.category)
+    : null;
+  const backHref = cat ? smyCategoryHref(mode, cat.key) : prefix + '/all';
+  const backLabel = cat
+    ? (smyHas(cat.label) ? cat.label : cat.key)
+    : `All ${mode === 'jewelry' ? 'jewelry' : 'woodwork'}`;
+
   const patch = (partial) => edit.setField(base, cur => ({ ...cur, ...partial }));
 
   return (
     <div className="pd">
       <section className="smy-container pd-crumb">
-        <a className="pd-back caption" href={prefix} onClick={e => { e.preventDefault(); navigate(prefix); }}>
-          ← All {mode === 'jewelry' ? 'jewelry' : 'woodwork'}
+        <a className="pd-back caption" href={backHref} onClick={e => { e.preventDefault(); navigate(backHref); }}>
+          ← {backLabel}
         </a>
       </section>
 
       <section className="smy-container pd-main">
         <div className="pd-media">
-          <Tile kind="vhero" image={photos[active] || product.image} alt={smyHas(product.title) ? product.title : `Piece No. ${num}`} corners />
+          <div className="pd-gallery">
+            {(photos.length > 1 || edit.active) && (
+              <div className="pd-thumbs" role="group" aria-label="More photographs">
+                {photos.map((src, i) => (
+                  <span key={src.slice(0, 80) + i} className="pd-thumbwrap">
+                    <button
+                      type="button"
+                      className={`pd-thumb ${i === active ? 'is-active' : ''}`}
+                      aria-label={`Photograph ${i + 1}`}
+                      aria-pressed={i === active}
+                      onMouseEnter={() => setActive(i)}
+                      onClick={() => setActive(i)}
+                    >
+                      <img src={src} alt="" loading="lazy" />
+                    </button>
+                    {edit.active && i > 0 && (
+                      <EBtn danger title="Remove this angle" onClick={() => {
+                        setActive(0);
+                        patch({ images: angles.filter((_, k) => k !== i - 1) });
+                      }}>×</EBtn>
+                    )}
+                  </span>
+                ))}
+                {edit.active && (
+                  <span className="pd-thumbwrap pd-thumbwrap--add">
+                    <EUpload label="+ Angles" multiple onDone={(urls) => patch({ images: [...angles, ...urls] })} />
+                  </span>
+                )}
+              </div>
+            )}
 
-          {(photos.length > 1 || edit.active) && (
-            <div className="pd-thumbs" role="group" aria-label="More photographs">
-              {photos.map((src, i) => (
-                <span key={src.slice(0, 80) + i} className="pd-thumbwrap">
-                  <button
-                    type="button"
-                    className={`pd-thumb ${i === active ? 'is-active' : ''}`}
-                    aria-label={`Photograph ${i + 1}`}
-                    aria-pressed={i === active}
-                    onClick={() => setActive(i)}
-                  >
-                    <img src={src} alt="" loading="lazy" />
-                  </button>
-                  {edit.active && i > 0 && (
-                    <EBtn danger title="Remove this angle" onClick={() => {
-                      setActive(0);
-                      patch({ images: angles.filter((_, k) => k !== i - 1) });
-                    }}>×</EBtn>
-                  )}
-                </span>
-              ))}
-              {edit.active && (
-                <span className="pd-thumbwrap pd-thumbwrap--add">
-                  <EUpload label="+ Angles" multiple onDone={(urls) => patch({ images: [...angles, ...urls] })} />
-                </span>
-              )}
+            <div className="pd-stage">
+              <Tile kind="vhero" image={photos[active] || product.image} alt={smyHas(product.title) ? product.title : `Piece No. ${num}`} corners />
             </div>
-          )}
+          </div>
 
           {edit.active && (
             <div className="e-row">
@@ -188,8 +276,26 @@ function ProductPage({ navigate, route }) {
 
         <div className="pd-info">
           <span className="caption caption--accent">
-            — No. {num} · {mode === 'jewelry' ? 'Jewelry' : 'Woodwork'}
+            — No. {num} · {cat ? (smyHas(cat.label) ? cat.label : cat.key) : (mode === 'jewelry' ? 'Jewelry' : 'Woodwork')}
           </span>
+
+          {edit.active && (
+            <label className="pd-catpick">
+              <span className="caption" style={{ color: 'var(--fg-muted)' }}>Bucket</span>
+              <select
+                className="smy-input"
+                value={product.category || ''}
+                onChange={(e) => patch({ category: e.target.value })}
+              >
+                <option value="">— No bucket —</option>
+                {cats.map((c, i) => (
+                  <option key={c.key + i} value={c.key}>
+                    {smyHas(c.label) ? c.label : c.key}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {showTitle && (
             <h1 className="pd-title"><E path={`${base}.title`} ph="Title…" /></h1>
           )}

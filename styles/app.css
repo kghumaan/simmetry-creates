@@ -53,17 +53,69 @@ img { display: block; max-width: 100%; }
 }
 .smy-topnav.is-hidden { transform: translateY(-100%); }
 
+/* Over the home hero the bar carries no ground of its own: the photograph
+   is the ground, and everything in the bar turns white to read against it. */
+.smy-topnav.is-over-hero {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+.smy-topnav.is-over-hero .smy-brand,
+.smy-topnav.is-over-hero .smy-navlink,
+.smy-topnav.is-over-hero .smy-modetoggle__btn {
+  color: #fff;
+}
+.smy-topnav.is-over-hero .smy-brand .dot { color: #fff; }
+.smy-topnav.is-over-hero .smy-modetoggle__sep { background: rgba(255, 255, 255, 0.45); }
+.smy-topnav.is-over-hero .smy-menubtn__icon span { background: #fff; }
+/* The crest keeps its own colour over the photograph — a shadow is enough
+   to hold it off a light frame, where flattening it to white would not. */
+.smy-topnav.is-over-hero .smy-brand__emblem-layer.is-active {
+  filter: drop-shadow(0 1px 6px rgba(0, 0, 0, 0.55));
+}
+.smy-topnav.is-over-hero .smy-brand__word,
+.smy-topnav.is-over-hero .smy-navlink,
+.smy-topnav.is-over-hero .smy-modetoggle__btn {
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
+/* Three zones: mark left, collections centred, mode right — the centre
+   column stays centred on the page regardless of how wide the sides run. */
 .smy-topnav__inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  gap: 24px;
   height: 72px;
   padding: 0 48px;
-  max-width: 1440px;
+  max-width: 1600px;
   margin: 0 auto;
 }
+.smy-topnav__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: start;
+  min-width: 0;
+}
+.smy-topnav__nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 34px);
+  justify-self: center;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .smy-topnav__inner { padding: 0 28px; gap: 16px; }
+  .smy-topnav__nav { gap: 16px; }
+  .smy-navlink { font-size: 11px; letter-spacing: 0.08em; }
+}
 @media (max-width: 720px) {
-  .smy-topnav__inner { padding: 0 24px; height: 64px; }
+  .smy-topnav__inner {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 64px;
+  }
 }
 
 .smy-brand {
@@ -106,17 +158,22 @@ img { display: block; max-width: 100%; }
 .smy-topnav__right {
   display: flex;
   align-items: center;
+  justify-self: end;
   gap: 28px;
 }
 @media (max-width: 900px) {
   .smy-topnav__right { gap: 18px; }
   .smy-topnav__links { gap: 22px; }
 }
-/* On mobile we collapse the inline nav into a hamburger panel */
+/* Collapse the inline nav into the hamburger panel. The centre carries the
+   collections now — up to seven links — so it runs out of room well before
+   phone widths; below this the panel holds everything, mode toggle included. */
 .smy-menubtn { display: none; }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .smy-topnav__inline { display: none !important; }
   .smy-menubtn { display: inline-flex; }
+}
+@media (max-width: 720px) {
   .smy-brand { font-size: 22px; }
 }
 @media (max-width: 380px) {
@@ -303,6 +360,9 @@ img { display: block; max-width: 100%; }
   flex-direction: column;
 }
 @media (max-width: 720px) { .smy-page { padding-top: 64px; } }
+
+/* Home runs its hero under the bar, so it reclaims that offset. */
+.smy-page--home { padding-top: 0; }
 
 /* ---------- Caption type ------------------------------------------------- */
 .caption {

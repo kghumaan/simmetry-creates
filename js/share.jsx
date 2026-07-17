@@ -26,16 +26,57 @@
     try { return new URL(url, document.baseURI).href; } catch (e) { return url; }
   }
 
+  function decodeSeg(s) {
+    try { return decodeURIComponent(s); } catch (e) { return s; }
+  }
+
+  /* Published content once ContentProvider has resolved it (see
+     js/content.jsx); the shipped defaults until then. Reading the live tree
+     is what keeps a renamed or newly added bucket from sharing under its old
+     name — or under no name at all. */
+  function categoriesFor(isWw) {
+    const live = window.SMY_LIVE_CONTENT;
+    const key = isWw ? 'woodwork' : 'jewelry';
+    if (live && live.categories && Array.isArray(live.categories[key])) {
+      return live.categories[key];
+    }
+    const data = window.SMY_DATA || {};
+    return (isWw ? data.WOODWORK_CATEGORIES : data.JEWELRY_CATEGORIES) || [];
+  }
+
   function pickForRoute(route) {
     const data = window.SMY_DATA || {};
-    const jw = data.JEWELRY_IMAGES || [];
-    const ww = data.WOODWORK_IMAGES || [];
+    const live = window.SMY_LIVE_CONTENT;
+    const liveImages = (k) =>
+      live && live.products && Array.isArray(live.products[k])
+        ? live.products[k].map(p => p && p.image)
+        : null;
+    const jw = liveImages('jewelry') || data.JEWELRY_IMAGES || [];
+    const ww = liveImages('woodwork') || data.WOODWORK_IMAGES || [];
 
     const wwItem = route.match(/^\/(?:ww|woodwork)\/(\d+)\/?$/);
     const jwItem = route.match(/^\/jewelry\/(\d+)\/?$/);
     const wwAny  = /^\/(?:ww|woodwork)(?:\/|$)/.test(route);
     const jwAny  = /^\/jewelry(?:\/|$)/.test(route);
     const isAbout = /\/about(?:#|$)/.test(route);
+
+    // A bucket — /jewelry/c/necklaces — shares under its own name and tile.
+    const cat = route.match(/^\/(jewelry|ww|woodwork)\/c\/([^/]+)\/?$/);
+    if (cat) {
+      const isWw = cat[1] !== 'jewelry';
+      const key = decodeSeg(cat[2]);
+      const hit = categoriesFor(isWw).find(c => c.key === key);
+      if (hit) {
+        const fallbackDesc = isWw
+          ? 'Bespoke woodwork, made slowly.'
+          : 'Fine jewelry, made slowly.';
+        return {
+          title: SITE + ' — ' + (hit.label || key),
+          desc:  hit.blurb || fallbackDesc,
+          image: hit.image || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
+        };
+      }
+    }
 
     if (wwItem && ww[+wwItem[1]]) {
       return {

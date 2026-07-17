@@ -53,6 +53,13 @@
   --s-24: 96px;
   --s-32: 128px;
 
+  /* Full-bleed layout: photography runs clean to the edge, type sits at
+     `--type-inset` — the measure the home hero sets. `--tile-gap` is the
+     seam *between* tiles only; it never pads the outside of a grid. */
+  --bleed: 0px;
+  --tile-gap: 10px;
+  --type-inset: clamp(24px, 5vw, 88px);
+
   /* Shape — rectangles and hairlines, no soft cards */
   --radius-0: 0;
   --radius-1: 2px;       /* inputs, small UI */

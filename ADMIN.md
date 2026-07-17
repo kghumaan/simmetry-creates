@@ -10,14 +10,59 @@ becomes editable in place:
 - **Click any text** to change it right where it is. Empty it to remove it —
   when every field in a section is empty, the whole section disappears
   (placeholders keep empty spots visible while editing).
-- **Photographs**: reorder / remove / add pieces on the gallery; open a piece
+- **Photographs**: reorder / remove / add pieces on any listing; open a piece
   to edit its title, description, detail lines (metal, weight, shape, …),
-  optional price, and extra angle photos; replace the About portrait.
+  optional price, bucket, and extra angle photos; replace the About portrait.
 - **Add** story paragraphs, process steps, and product detail lines with the
   small “+” buttons.
 - Nothing changes for visitors until **Save & publish** in the bottom bar;
   Discard drops unsaved edits; “Reset to original…” restores the shipped
   content (after Save).
+
+## The home page
+
+Each mode (jewelry, woodwork) has its own home page at `/jewelry` and
+`/woodwork`, in three parts — all editable in place:
+
+1. **Hero** — a full-bleed photograph about three quarters of the screen tall,
+   with an eyebrow, headline, one or two sentences, and a button.
+   “Replace hero photograph” sits at its bottom-right while editing.
+2. **Six buckets** — the collections, edge to edge. Clicking one opens its
+   pieces at `/jewelry/c/necklaces`.
+3. **The film** — a full-height band at the bottom.
+
+### Bulk upload into a bucket
+
+Under each bucket tile while editing:
+
+- **Tile photo** — the single photograph shown on the bucket tile itself.
+- **+ Bulk upload to \<bucket\>** — pick as many photographs as you like in one
+  go. Every one becomes a piece already filed under that bucket, and the first
+  fills the tile if it is still empty. Open a piece afterwards to give it a
+  title, details, and a price. This is the fastest way to fill a new collection.
+
+The small bar under each tile reorders buckets (← →), opens one (✎), or removes
+it (×). Removing a bucket leaves its pieces alone — they simply stop appearing
+under a collection until they are filed again on their product pages.
+
+### The film
+
+The band shows its **poster image** until a film is supplied. To add one, upload
+the video somewhere it can be served (the Blob store, or any host), then paste
+its address into **Film address (mp4)** in the edit box at the band's
+bottom-right. It then plays muted and looping. Clear the address to fall back to
+the poster.
+
+## Buckets and pieces
+
+Every piece carries a `category` — the key of the bucket it belongs to. Pieces
+whose bucket is empty or unrecognised still work: they appear under **All work**
+and open normally, they just sit outside the six collections. File one by opening
+it and choosing from the **Bucket** dropdown.
+
+Renaming a bucket's label is safe at any time. The `key` behind it is what pieces
+point at, so it is not editable from the site — changing keys means editing
+`js/data.jsx`.
 
 ## How it works
 

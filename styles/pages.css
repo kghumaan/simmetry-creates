@@ -359,7 +359,14 @@
 }
 
 /* ---------- Gallery ------------------------------------------------------ */
-.gal-head { padding-block: 64px 48px; }
+/* One rule across the listing: photography bleeds to the edge, type is
+   inset to the same measure the home hero sets. */
+.gal-head,
+.gal-strip,
+.gal-empty {
+  padding-inline: var(--type-inset);
+}
+.gal-head { padding-block: 64px 40px; }
 @media (max-width: 720px) { .gal-head { padding-block: 32px 24px; } }
 .gal-head__top {
   display: flex; justify-content: space-between;
@@ -414,22 +421,56 @@
 .gal-filter__y.is-on { color: var(--fg); }
 .gal-filter__y.is-on::after { background: var(--accent); }
 
-.gal-grid {
-  padding-block: 64px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 64px 32px;
+/* Bucket strip — the collections, always one tap away from a listing */
+.gal-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 28px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
 }
-@media (max-width: 900px) { .gal-grid { grid-template-columns: repeat(2, 1fr); gap: 40px 20px; padding-block: 48px; } }
-@media (max-width: 540px) { .gal-grid { grid-template-columns: 1fr; gap: 40px; } }
-.gal-card { display: flex; flex-direction: column; gap: 16px; }
+.gal-strip__link {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-decoration: none;
+  opacity: 0.55;
+  padding: 8px 0;
+  border-bottom: 1px solid transparent;
+  transition: opacity 200ms var(--ease), border-color 200ms var(--ease);
+}
+.gal-strip__link:hover { opacity: 1; }
+.gal-strip__link.is-active {
+  opacity: 1;
+  border-bottom-color: var(--accent);
+}
+
+.gal-empty { padding-block: 24px 64px; }
+
+/* Full bleed — the pieces are the page, with only a hairline gutter. */
+.gal-grid {
+  padding: 32px var(--bleed) 64px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px var(--tile-gap);
+}
+@media (max-width: 1200px) { .gal-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) { .gal-grid { grid-template-columns: repeat(2, 1fr); gap: 28px var(--tile-gap); padding-bottom: 48px; } }
+@media (max-width: 540px) { .gal-grid { grid-template-columns: 1fr; gap: 28px; } }
+.gal-card { display: flex; flex-direction: column; gap: 12px; }
 .gal-card__body { display: flex; flex-direction: column; gap: 8px; }
 .gal-card__top { display: flex; justify-content: space-between; }
 .gal-card__name {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 22px;
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.25;
   margin: 0;
+  color: var(--fg);
 }
 
 .gal-card__link {
@@ -648,26 +689,58 @@
 
 .pd-media { min-width: 0; }
 
+/* Thumbnails run down the left of the stage, the way a plate sits beside
+   its contact sheet. They wrap under the image once the column is too
+   narrow to hold both. */
+.pd-gallery {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.pd-stage { flex: 1 1 auto; min-width: 0; }
+
 .pd-thumbs {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex: 0 0 84px;
+  width: 84px;
   gap: 10px;
-  margin-top: 14px;
 }
+.pd-thumbwrap { position: relative; display: block; }
 .pd-thumb {
   padding: 0;
   border: 1px solid var(--hairline);
   background: var(--photo-ground);
   cursor: pointer;
-  width: 72px;
-  height: 90px;
+  width: 84px;
+  height: 104px;
   overflow: hidden;
-  opacity: 0.75;
+  opacity: 0.72;
   transition: opacity 200ms var(--ease), border-color 200ms var(--ease);
 }
 .pd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pd-thumb:hover { opacity: 1; }
 .pd-thumb.is-active { opacity: 1; border-color: var(--accent); }
+.pd-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pd-catpick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 260px;
+}
+
+@media (max-width: 640px) {
+  .pd-gallery { flex-direction: column-reverse; }
+  .pd-thumbs {
+    flex: 0 0 auto;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .pd-thumb { width: 72px; height: 88px; }
+}
 
 .pd-specs {
   margin: 8px 0 0;

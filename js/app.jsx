@@ -1,6 +1,6 @@
 /* global React, ReactDOM, ModeProvider, ContentProvider, EditProvider, EditBar,
    TopNav, Footer, useRoute, currentSection, useMode, LandingA, LandingB, LandingC,
-   Gallery, ProductPage, About, AdminPage,
+   Home, Gallery, ProductPage, About, AdminPage,
    TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakSelect */
 const { useEffect } = React;
 
@@ -24,7 +24,8 @@ function PageRouter({ navigate, route, variant }) {
 
   if (section === 'about') return <About navigate={navigate} />;
   if (section === 'product') return <ProductPage navigate={navigate} route={route} />;
-  return <Gallery navigate={navigate} />;
+  if (section === 'gallery') return <Gallery navigate={navigate} route={route} />;
+  return <Home navigate={navigate} />;
 }
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;
@@ -32,14 +33,17 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{}/*EDITMODE-END*/;
 function App() {
   const [route, navigate] = useRoute();
   useTweaks(TWEAK_DEFAULTS);
-  const isAdmin = currentSection(route) === 'admin';
+  const section = currentSection(route);
+  const isAdmin = section === 'admin';
+  // The home hero runs under the floating bar; every other page starts below it.
+  const isHome = section === 'home';
 
   return (
     <ContentProvider>
       <EditProvider>
         <ModeProvider>
           {!isAdmin && <TopNav route={route} navigate={navigate} />}
-          <main className="smy-page">
+          <main className={`smy-page ${isHome ? 'smy-page--home' : ''}`}>
             {isAdmin
               ? <AdminPage navigate={navigate} />
               : (
