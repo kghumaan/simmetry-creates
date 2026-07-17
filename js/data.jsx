@@ -7,9 +7,12 @@
 
 /* One product per gallery photograph. Every field is optional on the live
    site (empty = hidden); `details` is an ordered label/value list rendered
-   under the product image; `images` are optional extra angles. */
-function smyProduct(image, title, description, details, price) {
+   beside the product image; `images` are optional extra angles. `category`
+   is the key of the bucket it belongs to (see CATEGORIES below) — a product
+   with no category still opens, it just sits outside the buckets. */
+function smyProduct(category, image, title, description, details, price) {
   return {
+    category: category || '',
     image,
     title: title || '',
     description: description || '',
@@ -20,79 +23,79 @@ function smyProduct(image, title, description, details, price) {
 }
 
 const JEWELRY_PRODUCTS = [
-  smyProduct('/uploads/jewelry/1770438028429.png', 'Orchard band', 'A wide band cut from a single ingot, the vine chased by hand over two evenings.', [
+  smyProduct('engagement', '/uploads/jewelry/1770438028429.png', 'Orchard band', 'A wide band cut from a single ingot, the vine chased by hand over two evenings.', [
     { label: 'Metal', value: '18k rose gold' },
     { label: 'Metal weight', value: '9.4 g' },
     { label: 'Diamond weight', value: '0.32 ct' },
     { label: 'Shape', value: 'Round brilliant' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770444812567.png', 'Crescent drops', 'Emerald crescents with rose-cut drops; the pair sits just off the jaw.', [
+  smyProduct('earrings', '/uploads/jewelry/1770444812567.png', 'Crescent drops', 'Emerald crescents with rose-cut drops; the pair sits just off the jaw.', [
     { label: 'Metal', value: '18k white gold' },
     { label: 'Metal weight', value: '11.2 g' },
     { label: 'Diamond weight', value: '2.10 ct' },
     { label: 'Shape', value: 'Rose cut, pear' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770532742242.png', 'Garland bracelet', 'Rubies seated in an openwork garland; the clasp disappears into the pattern.', [
+  smyProduct('bracelets', '/uploads/jewelry/1770532742242.png', 'Garland bracelet', 'Rubies seated in an openwork garland; the clasp disappears into the pattern.', [
     { label: 'Metal', value: 'Platinum' },
     { label: 'Metal weight', value: '18.6 g' },
     { label: 'Diamond weight', value: '3.40 ct' },
     { label: 'Shape', value: 'Old European' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770786241284(1)(1)(1).png', 'Orchid strand', 'A pavé orchid on twin strands of freshwater pearl, knotted by hand.', [
+  smyProduct('necklaces', '/uploads/jewelry/1770786241284(1)(1)(1).png', 'Orchid strand', 'A pavé orchid on twin strands of freshwater pearl, knotted by hand.', [
     { label: 'Metal', value: '18k yellow gold' },
     { label: 'Metal weight', value: '7.8 g' },
     { label: 'Diamond weight', value: '1.15 ct' },
     { label: 'Shape', value: 'Round, mixed melee' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770788657479.png', 'Evening set', 'Made for a wedding in Alibaug; photographed before it left the studio.', [
+  smyProduct('bespoke', '/uploads/jewelry/1770788657479.png', 'Evening set', 'Made for a wedding in Alibaug; photographed before it left the studio.', [
     { label: 'Metal', value: '18k white gold' },
     { label: 'Metal weight', value: '14.1 g' },
     { label: 'Diamond weight', value: '2.75 ct' },
     { label: 'Shape', value: 'Pear and round' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770890994769.png', 'Heirloom collar', 'A client’s grandmother’s stones, reset into a collar she can wear daily.', [
+  smyProduct('necklaces', '/uploads/jewelry/1770890994769.png', 'Heirloom collar', 'A client’s grandmother’s stones, reset into a collar she can wear daily.', [
     { label: 'Metal', value: '22k yellow gold' },
     { label: 'Metal weight', value: '21.0 g' },
     { label: 'Diamond weight', value: '1.90 ct' },
     { label: 'Shape', value: 'Uncut polki' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1770983581672.png', 'Meadow studs', 'Cluster studs in mixed colours; no two leaves repeat.', [
+  smyProduct('earrings', '/uploads/jewelry/1770983581672.png', 'Meadow studs', 'Cluster studs in mixed colours; no two leaves repeat.', [
     { label: 'Metal', value: '18k yellow gold' },
     { label: 'Metal weight', value: '5.2 g' },
     { label: 'Diamond weight', value: '1.48 ct' },
     { label: 'Shape', value: 'Fancy mixed' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1772117224535.png', 'Lattice cuff', 'A pierced lattice worked over a steel former, then set stone by stone.', [
+  smyProduct('bracelets', '/uploads/jewelry/1772117224535.png', 'Lattice cuff', 'A pierced lattice worked over a steel former, then set stone by stone.', [
     { label: 'Metal', value: '18k rose gold' },
     { label: 'Metal weight', value: '16.3 g' },
     { label: 'Diamond weight', value: '2.05 ct' },
     { label: 'Shape', value: 'Round brilliant' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1772117375815.png', 'Winter halo', 'A halo pendant on a hand-drawn chain; the bail is hidden in the leaves.', [
+  smyProduct('necklaces', '/uploads/jewelry/1772117375815.png', 'Winter halo', 'A halo pendant on a hand-drawn chain; the bail is hidden in the leaves.', [
     { label: 'Metal', value: 'Platinum' },
     { label: 'Metal weight', value: '8.9 g' },
     { label: 'Diamond weight', value: '1.62 ct' },
     { label: 'Shape', value: 'Oval' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1773296958445.png', 'Court ring', 'A quiet court-shaped ring, comfortable enough to forget.', [
+  smyProduct('rings', '/uploads/jewelry/1773296958445.png', 'Court ring', 'A quiet court-shaped ring, comfortable enough to forget.', [
     { label: 'Metal', value: '18k yellow gold' },
     { label: 'Metal weight', value: '6.1 g' },
     { label: 'Diamond weight', value: '0.55 ct' },
     { label: 'Shape', value: 'Round brilliant' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1773469195917.png', 'Paisley drops', 'Paisley drops with sapphire centres; the outline is Surat, the cut is Antwerp.', [
+  smyProduct('earrings', '/uploads/jewelry/1773469195917.png', 'Paisley drops', 'Paisley drops with sapphire centres; the outline is Surat, the cut is Antwerp.', [
     { label: 'Metal', value: '18k white gold' },
     { label: 'Metal weight', value: '10.4 g' },
     { label: 'Diamond weight', value: '1.85 ct' },
     { label: 'Shape', value: 'Marquise and pear' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/1773636672403.png', 'Trellis necklace', 'A trellis of emerald and ruby over the collarbone; sits flat under a sari pallu.', [
+  smyProduct('necklaces', '/uploads/jewelry/1773636672403.png', 'Trellis necklace', 'A trellis of emerald and ruby over the collarbone; sits flat under a sari pallu.', [
     { label: 'Metal', value: '22k yellow gold' },
     { label: 'Metal weight', value: '24.7 g' },
     { label: 'Diamond weight', value: '3.10 ct' },
     { label: 'Shape', value: 'Mixed, old cuts' },
   ], 'On request'),
-  smyProduct('/uploads/jewelry/file_00000000d09c71fab3061951c044c8bb.png', 'Pendant No. 13', 'A single pendant on a plain loop — the piece that started the register.', [
+  smyProduct('bespoke', '/uploads/jewelry/file_00000000d09c71fab3061951c044c8bb.png', 'Pendant No. 13', 'A single pendant on a plain loop — the piece that started the register.', [
     { label: 'Metal', value: '18k yellow gold' },
     { label: 'Metal weight', value: '4.6 g' },
     { label: 'Diamond weight', value: '0.20 ct' },
@@ -101,62 +104,122 @@ const JEWELRY_PRODUCTS = [
 ];
 
 const WOODWORK_PRODUCTS = [
-  smyProduct('/uploads/woodwork/1774266702078.png', 'Almirah, revived', 'A family almirah stripped, repaired, and refitted with hand-cut brass inlay.', [
+  smyProduct('restoration', '/uploads/woodwork/1774266702078.png', 'Almirah, revived', 'A family almirah stripped, repaired, and refitted with hand-cut brass inlay.', [
     { label: 'Wood', value: 'Teak, reclaimed' },
     { label: 'Finish', value: 'Hand-rubbed oil' },
     { label: 'Dimensions', value: '72 × 36 × 18 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20230408_141429.jpg', 'Console No. 2', 'A long console with a single drawer; the pulls are turned from offcuts.', [
+  smyProduct('tables', '/uploads/woodwork/20230408_141429.jpg', 'Console No. 2', 'A long console with a single drawer; the pulls are turned from offcuts.', [
     { label: 'Wood', value: 'Sheesham' },
     { label: 'Finish', value: 'Oil and wax' },
     { label: 'Dimensions', value: '54 × 30 × 14 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20230503_224742.jpg', 'Ottoman bench', 'A kilim-topped ottoman on turned legs; the upholstery lifts for storage.', [
+  smyProduct('seating', '/uploads/woodwork/20230503_224742.jpg', 'Ottoman bench', 'A kilim-topped ottoman on turned legs; the upholstery lifts for storage.', [
     { label: 'Wood', value: 'Mango' },
     { label: 'Finish', value: 'Shellac' },
     { label: 'Dimensions', value: '40 × 18 × 16 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20230703_205012.jpg', 'Hall table', 'A hall table with pierced iron brackets rescued from the original piece.', [
+  smyProduct('tables', '/uploads/woodwork/20230703_205012.jpg', 'Hall table', 'A hall table with pierced iron brackets rescued from the original piece.', [
     { label: 'Wood', value: 'Teak' },
     { label: 'Finish', value: 'Hand-rubbed oil' },
     { label: 'Dimensions', value: '48 × 32 × 15 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20230708_101814.jpg', 'Reading chair', 'Mended, re-caned, and returned to the window it has faced for forty years.', [
+  smyProduct('seating', '/uploads/woodwork/20230708_101814.jpg', 'Reading chair', 'Mended, re-caned, and returned to the window it has faced for forty years.', [
     { label: 'Wood', value: 'Burma teak' },
     { label: 'Finish', value: 'Oil, no lacquer' },
     { label: 'Dimensions', value: 'Standard seat' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20230826_203208.jpg', 'Spice cabinet', 'A small cabinet of drawers, each front cut from the same board in sequence.', [
+  smyProduct('cabinets', '/uploads/woodwork/20230826_203208.jpg', 'Spice cabinet', 'A small cabinet of drawers, each front cut from the same board in sequence.', [
     { label: 'Wood', value: 'Walnut' },
     { label: 'Finish', value: 'Hand-rubbed oil' },
     { label: 'Dimensions', value: '24 × 30 × 10 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20231101_121228.jpg', 'Writing desk', 'A writing desk with a leather top; the drawer runs on wooden slides.', [
+  smyProduct('desks', '/uploads/woodwork/20231101_121228.jpg', 'Writing desk', 'A writing desk with a leather top; the drawer runs on wooden slides.', [
     { label: 'Wood', value: 'Teak and rosewood' },
     { label: 'Finish', value: 'Shellac' },
     { label: 'Dimensions', value: '48 × 30 × 24 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20240805_084736.jpg', 'Balcony rail', 'A restored balcony rail; every third baluster is new, and none announce it.', [
+  smyProduct('architectural', '/uploads/woodwork/20240805_084736.jpg', 'Balcony rail', 'A restored balcony rail; every third baluster is new, and none announce it.', [
     { label: 'Wood', value: 'Teak, weathered' },
     { label: 'Finish', value: 'Exterior oil' },
     { label: 'Dimensions', value: 'To site' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20250505_165628.jpg', 'Side table pair', 'A pair of side tables, mirrored grain, from one plank rested two seasons.', [
+  smyProduct('tables', '/uploads/woodwork/20250505_165628.jpg', 'Side table pair', 'A pair of side tables, mirrored grain, from one plank rested two seasons.', [
     { label: 'Wood', value: 'Mango, quartersawn' },
     { label: 'Finish', value: 'Oil and wax' },
     { label: 'Dimensions', value: '18 × 22 × 18 in' },
   ], 'On request'),
-  smyProduct('/uploads/woodwork/20250505_165634.jpg', 'Console No. 5', 'The fifth console in the register; the stretcher is a single sweep.', [
+  smyProduct('tables', '/uploads/woodwork/20250505_165634.jpg', 'Console No. 5', 'The fifth console in the register; the stretcher is a single sweep.', [
     { label: 'Wood', value: 'Sheesham' },
     { label: 'Finish', value: 'Hand-rubbed oil' },
     { label: 'Dimensions', value: '52 × 30 × 14 in' },
   ], 'On request'),
 ];
 
+/* The six buckets per mode. `key` is what a product's `category` points at
+   and what appears in the URL (/jewelry/c/necklaces) — renaming a label is
+   safe, changing a key orphans its products. `image` is the tile photograph
+   on the home page. */
+const JEWELRY_CATEGORIES = [
+  { key: 'engagement', label: 'Engagement', blurb: 'Rings for the beginning of it', image: '/uploads/jewelry/1770438028429.png' },
+  { key: 'necklaces',  label: 'Necklaces',  blurb: 'Collars, strands, and pendants', image: '/uploads/jewelry/1773636672403.png' },
+  { key: 'earrings',   label: 'Earrings',   blurb: 'Studs and drops, cut by hand',   image: '/uploads/jewelry/1770444812567.png' },
+  { key: 'bracelets',  label: 'Bracelets',  blurb: 'Cuffs and garlands',             image: '/uploads/jewelry/1770532742242.png' },
+  { key: 'rings',      label: 'Rings',      blurb: 'Bands worn every day',           image: '/uploads/jewelry/1773296958445.png' },
+  { key: 'bespoke',    label: 'Bespoke',    blurb: 'Commissioned, one of one',       image: '/uploads/jewelry/1770788657479.png' },
+];
+
+const WOODWORK_CATEGORIES = [
+  { key: 'tables',        label: 'Tables',        blurb: 'Consoles, halls, and sides',   image: '/uploads/woodwork/20230703_205012.jpg' },
+  { key: 'seating',       label: 'Seating',       blurb: 'Chairs, benches, ottomans',    image: '/uploads/woodwork/20230708_101814.jpg' },
+  { key: 'cabinets',      label: 'Cabinets',      blurb: 'Casework and drawers',         image: '/uploads/woodwork/20230826_203208.jpg' },
+  { key: 'desks',         label: 'Desks',         blurb: 'Surfaces to work at',          image: '/uploads/woodwork/20231101_121228.jpg' },
+  { key: 'restoration',   label: 'Restoration',   blurb: 'Brought back, not replaced',   image: '/uploads/woodwork/1774266702078.png' },
+  { key: 'architectural', label: 'Architectural', blurb: 'Fitted to the building',       image: '/uploads/woodwork/20240805_084736.jpg' },
+];
+
 const SMY_DEFAULTS = {
   branding: {
     jewelryLogo: '/assets/emblem-jewelry.png',
     woodworkLogo: '/assets/emblem-woodwork.png',
+  },
+
+  /* Home page — one hero, six buckets, one film, per mode. */
+  home: {
+    jewelry: {
+      // Placeholder until the studio supplies a hero frame. Picked for
+      // resolution (1696x2528 — no upscaling across a full-width hero) and
+      // for its soft left third, which the headline needs to sit against.
+      heroImage: '/uploads/jewelry/1770438028429.png',
+      heroEyebrow: 'The studio · Spring intake',
+      heroTitle: 'Quiet objects, made slowly.',
+      heroLede: 'Fine jewelry from a single bench in Mumbai. Gold, stone, and the patience to set them properly.',
+      heroCta: 'Explore the work',
+      videoUrl: '',
+      videoPoster: '/uploads/jewelry/1772117224535.png',
+      videoEyebrow: '— At the bench',
+      videoTitle: 'Every stone, seated by hand.',
+      videoLede: 'A film from the studio — cutting, setting, and finishing a single piece from ingot to final polish.',
+      videoCta: 'See the process',
+    },
+    woodwork: {
+      heroImage: '/uploads/woodwork/20230703_205012.jpg',
+      heroEyebrow: 'The shop · Spring intake',
+      heroTitle: 'Joinery cut by hand.',
+      heroLede: 'Bespoke woodwork and restoration. Solid timber, oil finish, and time enough to choose the right grain.',
+      heroCta: 'Explore the work',
+      videoUrl: '',
+      videoPoster: '/uploads/woodwork/20230408_141429.jpg',
+      videoEyebrow: '— In the shop',
+      videoTitle: 'A joint that needs no glue.',
+      videoLede: 'A film from the shop — milling, cutting, and fitting a piece from rough board to finished surface.',
+      videoCta: 'See the process',
+    },
+  },
+
+  categories: {
+    jewelry: JEWELRY_CATEGORIES,
+    woodwork: WOODWORK_CATEGORIES,
   },
 
   products: {
@@ -169,6 +232,12 @@ const SMY_DEFAULTS = {
     woodworkTitle: 'Woodwork.',
     countSuffix: 'pieces',
     ctaLabel: 'Begin a commission',
+    /* Home page bucket grid + the label on every tile */
+    bucketsEyebrow: '— Browse the studio',
+    bucketsTitle: 'Where to begin',
+    exploreLabel: 'Explore',
+    allLabel: 'All pieces',
+    emptyBucket: 'Nothing in this bucket yet. The next intake fills it.',
   },
 
   about: {
@@ -294,6 +363,8 @@ window.SMY_DEFAULTS = SMY_DEFAULTS;
 window.SMY_DATA = {
   JEWELRY_IMAGES: SMY_DEFAULTS.products.jewelry.map(p => p.image),
   WOODWORK_IMAGES: SMY_DEFAULTS.products.woodwork.map(p => p.image),
+  JEWELRY_CATEGORIES,
+  WOODWORK_CATEGORIES,
   ABOUT_IMAGE: SMY_DEFAULTS.about.portrait,
   HERO_COPY,
   SECTION_INTROS,

@@ -173,17 +173,20 @@ function TopNav({ route, navigate }) {
   const contactVisible = smyInquiryVisible(content.about) || edit.active;
   const branding = content.branding;
   const [hidden, setHidden] = useState(false);
+  const [atTop, setAtTop] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
 
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
+      setAtTop(y < 40);
       if (y < 80) { setHidden(false); lastY.current = y; return; }
       if (y > lastY.current + 6) setHidden(true);
       else if (y < lastY.current - 6) setHidden(false);
       lastY.current = y;
     };
+    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -216,10 +219,12 @@ function TopNav({ route, navigate }) {
     if (target === mode) return;
     const rect = e.currentTarget.getBoundingClientRect();
     setMode(target, rect);
-    // Update URL: keep "section" but swap mode prefix
+    // Keep the reader roughly where they were, but bucket keys and piece
+    // indices don't carry across modes — those land on the mode's own root.
     const sub = currentSection(route);
     const prefix = modePrefix(target);
     if (sub === 'about') navigate(prefix + '/about');
+    else if (sub === 'gallery') navigate(prefix + '/all');
     else navigate(prefix);
   };
 
@@ -233,31 +238,69 @@ function TopNav({ route, navigate }) {
   };
 
   const section = currentSection(route);
+  const cats = (content.categories && content.categories[mode]) || [];
+  // On the home page the bar floats over the hero photograph until the
+  // reader scrolls — white type, no ground. Everywhere else it is solid.
+  const overHero = section === 'home' && atTop && !menuOpen;
 
   return (
-    <header className={`smy-topnav ${hidden && !menuOpen ? 'is-hidden' : ''} ${menuOpen ? 'is-menu-open' : ''}`}>
+    <header className={`smy-topnav ${hidden && !menuOpen ? 'is-hidden' : ''} ${menuOpen ? 'is-menu-open' : ''} ${overHero ? 'is-over-hero' : ''}`}>
       <div className="smy-topnav__inner">
-        <a className="smy-brand smy-brand--with-mark" href="/jewelry" onClick={e => { e.preventDefault(); navigate('/jewelry'); }}>
-          <span className="smy-brand__emblem" aria-hidden="true">
-            <span
-              className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
-              style={{ backgroundImage: `url(${smyLogoFor(branding, 'jewelry')})` }}
-            />
-            <span
-              className={`smy-brand__emblem-layer ${mode === 'woodwork' ? 'is-active' : ''}`}
-              style={{ backgroundImage: `url(${smyLogoFor(branding, 'woodwork')})` }}
-            />
-          </span>
-          <span className="smy-brand__word">Simmetry<span className="dot">.</span>Creates</span>
-        </a>
-        {edit.active && (
-          <span className="e-logobtn">
-            <EUpload
-              label={`Replace ${mode} logo`}
-              onDone={(urls) => edit.setField(`branding.${mode === 'woodwork' ? 'woodworkLogo' : 'jewelryLogo'}`, urls[0])}
-            />
-          </span>
-        )}
+        <div className="smy-topnav__left">
+          <a className="smy-brand smy-brand--with-mark" href={modePrefix(mode)} onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
+            <span className="smy-brand__emblem" aria-hidden="true">
+              <span
+                className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
+                style={{ backgroundImage: `url(${smyLogoFor(branding, 'jewelry')})` }}
+              />
+              <span
+                className={`smy-brand__emblem-layer ${mode === 'woodwork' ? 'is-active' : ''}`}
+                style={{ backgroundImage: `url(${smyLogoFor(branding, 'woodwork')})` }}
+              />
+            </span>
+            <span className="smy-brand__word">Simmetry<span className="dot">.</span>Creates</span>
+          </a>
+          {edit.active && (
+            <span className="e-logobtn">
+              <EUpload
+                label={`Replace ${mode} logo`}
+                onDone={(urls) => edit.setField(`branding.${mode === 'woodwork' ? 'woodworkLogo' : 'jewelryLogo'}`, urls[0])}
+              />
+            </span>
+          )}
+        </div>
+
+        {/* Centre — the buckets, the way Tacori runs its collections */}
+        <nav className="smy-topnav__nav smy-topnav__inline" aria-label="Main">
+          {cats.slice(0, 4).map((c, i) => (
+            <a key={c.key + i}
+               className="smy-navlink"
+               href={smyCategoryHref(mode, c.key)}
+               aria-current={smyRouteCategory(route) === c.key ? 'page' : undefined}
+               onClick={e => { e.preventDefault(); navigate(smyCategoryHref(mode, c.key)); }}>
+              {smyHas(c.label) ? c.label : c.key}
+            </a>
+          ))}
+          <a className="smy-navlink"
+             href={modePrefix(mode) + '/all'}
+             aria-current={section === 'gallery' && !smyRouteCategory(route) ? 'page' : undefined}
+             onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/all'); }}>
+            All work
+          </a>
+          <a className="smy-navlink"
+             href={modePrefix(mode) + '/about'}
+             aria-current={section === 'about' ? 'page' : undefined}
+             onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
+            Our story
+          </a>
+          {contactVisible && (
+            <a className="smy-navlink"
+               href={modePrefix(mode) + '/about#contact'}
+               onClick={goContact}>
+              Contact
+            </a>
+          )}
+        </nav>
 
         <div className="smy-topnav__right">
           <div className="smy-modetoggle smy-topnav__inline">
@@ -273,28 +316,6 @@ function TopNav({ route, navigate }) {
               onClick={(e) => onToggle('woodwork', e)}
             >Woodwork</button>
           </div>
-          <span className="smy-topnav__divider smy-topnav__inline" />
-          <nav className="smy-topnav__links smy-topnav__inline">
-            <a className="smy-navlink"
-               href={modePrefix(mode)}
-               aria-current={section === 'gallery' ? 'page' : undefined}
-               onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
-              Gallery
-            </a>
-            <a className="smy-navlink"
-               href={modePrefix(mode) + '/about'}
-               aria-current={section === 'about' ? 'page' : undefined}
-               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
-              About
-            </a>
-            {contactVisible && (
-              <a className="smy-navlink"
-                 href={modePrefix(mode) + '/about#contact'}
-                 onClick={goContact}>
-                Contact
-              </a>
-            )}
-          </nav>
 
           <button
             className={`smy-menubtn ${menuOpen ? 'is-open' : ''}`}
@@ -333,19 +354,40 @@ function TopNav({ route, navigate }) {
             </div>
           </div>
 
+          {cats.length > 0 && (
+            <nav className="smy-panel__group smy-panel__nav">
+              <span className="smy-panel__label">Collections</span>
+              {cats.map((c, i) => (
+                <a key={c.key + i}
+                   className="smy-panel__link"
+                   aria-current={smyRouteCategory(route) === c.key ? 'page' : undefined}
+                   href={smyCategoryHref(mode, c.key)}
+                   onClick={e => { e.preventDefault(); navigate(smyCategoryHref(mode, c.key)); }}>
+                  {smyHas(c.label) ? c.label : c.key}
+                </a>
+              ))}
+            </nav>
+          )}
+
           <nav className="smy-panel__group smy-panel__nav">
             <span className="smy-panel__label">Pages</span>
             <a className="smy-panel__link"
-               aria-current={section === 'gallery' ? 'page' : undefined}
+               aria-current={section === 'home' ? 'page' : undefined}
                href={modePrefix(mode)}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
-              Gallery
+              Home
+            </a>
+            <a className="smy-panel__link"
+               aria-current={section === 'gallery' && !smyRouteCategory(route) ? 'page' : undefined}
+               href={modePrefix(mode) + '/all'}
+               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/all'); }}>
+              All work
             </a>
             <a className="smy-panel__link"
                aria-current={section === 'about' ? 'page' : undefined}
                href={modePrefix(mode) + '/about'}
                onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
-              About
+              Our story
             </a>
             {contactVisible && (
               <a className="smy-panel__link"
@@ -361,12 +403,43 @@ function TopNav({ route, navigate }) {
   );
 }
 
+/* Routes, per mode:
+     /jewelry            home — hero, buckets, film
+     /jewelry/all        every piece
+     /jewelry/c/<key>    one bucket
+     /jewelry/3          one piece
+     /jewelry/about      about + contact
+     /admin              the door into edit mode                          */
+const SMY_CAT_RE = /^\/(?:jewelry|ww|woodwork)\/c\/([^/]+)$/;
+
 function currentSection(route) {
   if (/^\/admin(\/|$)/.test(route)) return 'admin';
   if (route.endsWith('/about')) return 'about';
   if (/^\/(jewelry|ww|woodwork)\/\d+$/.test(route)) return 'product';
-  // Home + any mode root is the gallery
-  return 'gallery';
+  if (SMY_CAT_RE.test(route)) return 'gallery';
+  if (/^\/(jewelry|ww|woodwork)\/all$/.test(route)) return 'gallery';
+  // Any bare mode root is the home page
+  return 'home';
+}
+
+/* The bucket key a route points at, or null for /…/all and everything else. */
+function smyRouteCategory(route) {
+  const m = SMY_CAT_RE.exec(route || '');
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function smyModePrefix(mode) {
+  return mode === 'woodwork' ? '/woodwork' : '/jewelry';
+}
+
+/* The `c` segment keeps bucket keys from colliding with the numeric
+   product routes (/jewelry/3). */
+function smyCategoryHref(mode, key) {
+  return smyModePrefix(mode) + '/c/' + encodeURIComponent(key);
+}
+
+function smyCountIn(products, key) {
+  return (products || []).filter(p => p && p.category === key).length;
 }
 
 /* =========================================================================
@@ -546,5 +619,6 @@ function Reveal({ children, as: Tag = 'div', delay = 0, className = '', ...rest 
 Object.assign(window, {
   ModeProvider, useMode,
   useRoute, currentSection,
+  smyRouteCategory, smyModePrefix, smyCategoryHref, smyCountIn,
   TopNav, Footer, Tile, Emblem, Reveal,
 });

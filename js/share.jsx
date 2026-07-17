@@ -37,6 +37,22 @@
     const jwAny  = /^\/jewelry(?:\/|$)/.test(route);
     const isAbout = /\/about(?:#|$)/.test(route);
 
+    // A bucket — /jewelry/c/necklaces — shares under its own name and tile.
+    const cat = route.match(/^\/(jewelry|ww|woodwork)\/c\/([^/]+)\/?$/);
+    if (cat) {
+      const isWw = cat[1] !== 'jewelry';
+      const list = (isWw ? data.WOODWORK_CATEGORIES : data.JEWELRY_CATEGORIES) || [];
+      const key = decodeURIComponent(cat[2]);
+      const hit = list.find(c => c.key === key);
+      if (hit) {
+        return {
+          title: SITE + ' — ' + hit.label,
+          desc:  hit.blurb || (isWw ? 'Bespoke woodwork, made slowly.' : 'Fine jewelry, made slowly.'),
+          image: hit.image || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
+        };
+      }
+    }
+
     if (wwItem && ww[+wwItem[1]]) {
       return {
         title: SITE + ' — Woodwork, no. ' + (+wwItem[1] + 1),

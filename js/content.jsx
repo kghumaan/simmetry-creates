@@ -55,6 +55,15 @@ function smyLoadLocal() {
    Both run pure — deepMerge can hand back SMY_DEFAULTS subtrees by
    reference, so mutating in place would rewrite the shared defaults. */
 
+/* The category a shipped default gives this photograph, matched on the image
+   path (which is what survives in older saves). '' when we don't know it. */
+function smyDefaultCategoryFor(mode, image) {
+  if (!image) return '';
+  const defaults = (SMY_DEFAULTS.products && SMY_DEFAULTS.products[mode]) || [];
+  const hit = defaults.find(d => d.image === image);
+  return (hit && hit.category) || '';
+}
+
 function smyMigrateContent(c) {
   if (!c) return c;
   const out = { ...c };
@@ -73,6 +82,14 @@ function smyMigrateContent(c) {
       if (Array.isArray(out.products[k])) {
         out.products[k] = out.products[k].map(p =>
           typeof p === 'string' ? { image: p } : p);
+        // Buckets arrived after these were published, so nothing saved has a
+        // category. Recover it from the shipped defaults by photograph;
+        // anything unrecognised stays unfiled and shows only under All work,
+        // until the admin files it on the product page.
+        out.products[k] = out.products[k].map(p =>
+          !p || p.category !== undefined
+            ? p
+            : { ...p, category: smyDefaultCategoryFor(k, p.image) });
       }
     }
   }
@@ -114,6 +131,28 @@ function smyAbsolutizePaths(c) {
           image: fix(p.image),
           images: Array.isArray(p.images) ? p.images.map(fix) : p.images,
         }));
+      }
+    }
+  }
+  if (out.categories) {
+    out.categories = { ...out.categories };
+    for (const k of Object.keys(out.categories)) {
+      if (Array.isArray(out.categories[k])) {
+        out.categories[k] = out.categories[k].map(c => ({ ...c, image: fix(c.image) }));
+      }
+    }
+  }
+  if (out.home) {
+    out.home = { ...out.home };
+    for (const k of Object.keys(out.home)) {
+      const h = out.home[k];
+      if (h && typeof h === 'object') {
+        out.home[k] = {
+          ...h,
+          heroImage: fix(h.heroImage),
+          videoPoster: fix(h.videoPoster),
+          videoUrl: fix(h.videoUrl),
+        };
       }
     }
   }
