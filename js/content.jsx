@@ -55,12 +55,21 @@ function smyLoadLocal() {
    Both run pure — deepMerge can hand back SMY_DEFAULTS subtrees by
    reference, so mutating in place would rewrite the shared defaults. */
 
+/* Leading-slash form of a stored path. Pre-clean-URL saves hold
+   `uploads/x.png` where the defaults hold `/uploads/x.png`; smyAbsolutizePaths
+   reconciles that, but it runs *after* migration, so anything comparing paths
+   during migration has to normalize for itself. */
+function smyNormalizePath(v) {
+  return typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
+}
+
 /* The category a shipped default gives this photograph, matched on the image
    path (which is what survives in older saves). '' when we don't know it. */
 function smyDefaultCategoryFor(mode, image) {
   if (!image) return '';
+  const want = smyNormalizePath(image);
   const defaults = (SMY_DEFAULTS.products && SMY_DEFAULTS.products[mode]) || [];
-  const hit = defaults.find(d => d.image === image);
+  const hit = defaults.find(d => smyNormalizePath(d.image) === want);
   return (hit && hit.category) || '';
 }
 
@@ -119,7 +128,7 @@ function smyMigrateContent(c) {
 }
 
 function smyAbsolutizePaths(c) {
-  const fix = (v) => typeof v === 'string' && /^(uploads|assets)\//.test(v) ? '/' + v : v;
+  const fix = smyNormalizePath;
   if (!c) return c;
   const out = { ...c };
   if (out.products) {
@@ -288,6 +297,15 @@ function ContentProvider({ children }) {
   const applyContent = React.useCallback((next) => {
     setContentState(smyResolveContent(next));
   }, []);
+
+  /* share.jsx runs before React and only knows the shipped defaults. Hand it
+     the resolved content so link previews describe what is actually
+     published — a renamed bucket, a replaced tile — and re-stamp the tags for
+     the route already on screen. */
+  React.useEffect(() => {
+    window.SMY_LIVE_CONTENT = content;
+    if (typeof window.SMY_updateShareMeta === 'function') window.SMY_updateShareMeta();
+  }, [content]);
 
   const value = React.useMemo(
     () => ({ content, source, applyContent }),

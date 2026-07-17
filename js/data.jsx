@@ -195,6 +195,8 @@ const SMY_DEFAULTS = {
       heroTitle: 'Quiet objects, made slowly.',
       heroLede: 'Fine jewelry from a single bench in Mumbai. Gold, stone, and the patience to set them properly.',
       heroCta: 'Explore the work',
+      bucketsEyebrow: '— Browse the studio',
+      bucketsTitle: 'Where to begin',
       videoUrl: '',
       videoPoster: '/uploads/jewelry/1772117224535.png',
       videoEyebrow: '— At the bench',
@@ -208,6 +210,8 @@ const SMY_DEFAULTS = {
       heroTitle: 'Joinery cut by hand.',
       heroLede: 'Bespoke woodwork and restoration. Solid timber, oil finish, and time enough to choose the right grain.',
       heroCta: 'Explore the work',
+      bucketsEyebrow: '— Browse the shop',
+      bucketsTitle: 'Where to begin',
       videoUrl: '',
       videoPoster: '/uploads/woodwork/20230408_141429.jpg',
       videoEyebrow: '— In the shop',
@@ -232,9 +236,8 @@ const SMY_DEFAULTS = {
     woodworkTitle: 'Woodwork.',
     countSuffix: 'pieces',
     ctaLabel: 'Begin a commission',
-    /* Home page bucket grid + the label on every tile */
-    bucketsEyebrow: '— Browse the studio',
-    bucketsTitle: 'Where to begin',
+    /* Mode-agnostic UI labels, shared on purpose. The bucket-grid heading is
+       per-mode copy and lives in home.<mode> with the rest of it. */
     exploreLabel: 'Explore',
     allLabel: 'All pieces',
     emptyBucket: 'Nothing in this bucket yet. The next intake fills it.',

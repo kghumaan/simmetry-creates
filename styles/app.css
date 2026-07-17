@@ -165,11 +165,15 @@ img { display: block; max-width: 100%; }
   .smy-topnav__right { gap: 18px; }
   .smy-topnav__links { gap: 22px; }
 }
-/* On mobile we collapse the inline nav into a hamburger panel */
+/* Collapse the inline nav into the hamburger panel. The centre carries the
+   collections now — up to seven links — so it runs out of room well before
+   phone widths; below this the panel holds everything, mode toggle included. */
 .smy-menubtn { display: none; }
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
   .smy-topnav__inline { display: none !important; }
   .smy-menubtn { display: inline-flex; }
+}
+@media (max-width: 720px) {
   .smy-brand { font-size: 22px; }
 }
 @media (max-width: 380px) {

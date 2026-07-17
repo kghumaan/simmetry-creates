@@ -27,13 +27,16 @@
   object-fit: cover;
   display: block;
 }
-/* Weighted left so the type has ground without flattening the photograph */
+/* Weighted left so the type has ground without flattening the photograph.
+   The top band runs the full width and carries the floating nav: the left
+   wash stops before the mode toggle, which would otherwise be white type on
+   bare photograph. */
 .hm-hero__scrim {
   position: absolute;
   inset: 0;
   background:
     linear-gradient(90deg, rgba(12, 8, 6, 0.62) 0%, rgba(12, 8, 6, 0.34) 42%, rgba(12, 8, 6, 0) 72%),
-    linear-gradient(180deg, rgba(12, 8, 6, 0.34) 0%, rgba(12, 8, 6, 0) 30%);
+    linear-gradient(180deg, rgba(12, 8, 6, 0.46) 0%, rgba(12, 8, 6, 0.22) 12%, rgba(12, 8, 6, 0) 30%);
 }
 .hm-hero__inner {
   position: absolute;

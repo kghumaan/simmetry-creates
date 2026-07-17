@@ -213,7 +213,6 @@ function TopNav({ route, navigate }) {
     };
   }, []);
 
-  const modePrefix = (m) => m === 'woodwork' ? '/woodwork' : '/jewelry';
 
   const onToggle = (target, e) => {
     if (target === mode) return;
@@ -222,7 +221,7 @@ function TopNav({ route, navigate }) {
     // Keep the reader roughly where they were, but bucket keys and piece
     // indices don't carry across modes — those land on the mode's own root.
     const sub = currentSection(route);
-    const prefix = modePrefix(target);
+    const prefix = smyModePrefix(target);
     if (sub === 'about') navigate(prefix + '/about');
     else if (sub === 'gallery') navigate(prefix + '/all');
     else navigate(prefix);
@@ -230,7 +229,7 @@ function TopNav({ route, navigate }) {
 
   const goContact = (e) => {
     e.preventDefault();
-    navigate(modePrefix(mode) + '/about');
+    navigate(smyModePrefix(mode) + '/about');
     setTimeout(() => {
       const el = document.getElementById('contact');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -247,7 +246,7 @@ function TopNav({ route, navigate }) {
     <header className={`smy-topnav ${hidden && !menuOpen ? 'is-hidden' : ''} ${menuOpen ? 'is-menu-open' : ''} ${overHero ? 'is-over-hero' : ''}`}>
       <div className="smy-topnav__inner">
         <div className="smy-topnav__left">
-          <a className="smy-brand smy-brand--with-mark" href={modePrefix(mode)} onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
+          <a className="smy-brand smy-brand--with-mark" href={smyModePrefix(mode)} onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode)); }}>
             <span className="smy-brand__emblem" aria-hidden="true">
               <span
                 className={`smy-brand__emblem-layer ${mode === 'jewelry' ? 'is-active' : ''}`}
@@ -282,20 +281,20 @@ function TopNav({ route, navigate }) {
             </a>
           ))}
           <a className="smy-navlink"
-             href={modePrefix(mode) + '/all'}
+             href={smyModePrefix(mode) + '/all'}
              aria-current={section === 'gallery' && !smyRouteCategory(route) ? 'page' : undefined}
-             onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/all'); }}>
+             onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode) + '/all'); }}>
             All work
           </a>
           <a className="smy-navlink"
-             href={modePrefix(mode) + '/about'}
+             href={smyModePrefix(mode) + '/about'}
              aria-current={section === 'about' ? 'page' : undefined}
-             onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
+             onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode) + '/about'); }}>
             Our story
           </a>
           {contactVisible && (
             <a className="smy-navlink"
-               href={modePrefix(mode) + '/about#contact'}
+               href={smyModePrefix(mode) + '/about#contact'}
                onClick={goContact}>
               Contact
             </a>
@@ -373,25 +372,25 @@ function TopNav({ route, navigate }) {
             <span className="smy-panel__label">Pages</span>
             <a className="smy-panel__link"
                aria-current={section === 'home' ? 'page' : undefined}
-               href={modePrefix(mode)}
-               onClick={e => { e.preventDefault(); navigate(modePrefix(mode)); }}>
+               href={smyModePrefix(mode)}
+               onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode)); }}>
               Home
             </a>
             <a className="smy-panel__link"
                aria-current={section === 'gallery' && !smyRouteCategory(route) ? 'page' : undefined}
-               href={modePrefix(mode) + '/all'}
-               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/all'); }}>
+               href={smyModePrefix(mode) + '/all'}
+               onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode) + '/all'); }}>
               All work
             </a>
             <a className="smy-panel__link"
                aria-current={section === 'about' ? 'page' : undefined}
-               href={modePrefix(mode) + '/about'}
-               onClick={e => { e.preventDefault(); navigate(modePrefix(mode) + '/about'); }}>
+               href={smyModePrefix(mode) + '/about'}
+               onClick={e => { e.preventDefault(); navigate(smyModePrefix(mode) + '/about'); }}>
               Our story
             </a>
             {contactVisible && (
               <a className="smy-panel__link"
-                 href={modePrefix(mode) + '/about#contact'}
+                 href={smyModePrefix(mode) + '/about#contact'}
                  onClick={goContact}>
                 Contact
               </a>
@@ -422,10 +421,18 @@ function currentSection(route) {
   return 'home';
 }
 
+/* Decode a URL segment without letting a malformed escape (…/c/%zz, from a
+   truncated link or a crawler) throw through render and blank the page. A
+   segment we can't decode can't name a bucket, so the raw text is a fine
+   answer — nothing will match it. */
+function smyDecodeSegment(s) {
+  try { return decodeURIComponent(s); } catch { return s; }
+}
+
 /* The bucket key a route points at, or null for /…/all and everything else. */
 function smyRouteCategory(route) {
   const m = SMY_CAT_RE.exec(route || '');
-  return m ? decodeURIComponent(m[1]) : null;
+  return m ? smyDecodeSegment(m[1]) : null;
 }
 
 function smyModePrefix(mode) {

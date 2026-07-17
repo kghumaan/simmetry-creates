@@ -82,6 +82,8 @@ function HomeBuckets({ navigate }) {
   const cats = (content.categories && content.categories[mode]) || [];
   const products = content.products[mode] || [];
   const G = content.gallery;
+  const H = (content.home && content.home[mode]) || {};
+  const homePath = `home.${mode}`;
   const listPath = `categories.${mode}`;
   const prodPath = `products.${mode}`;
 
@@ -98,11 +100,17 @@ function HomeBuckets({ navigate }) {
   const removeCat = (i) =>
     edit.setField(listPath, cur => cur.filter((_, k) => k !== i));
 
+  /* Keys have to be unique: products point at them, and the admin can't edit
+     a key once set. Counting the list would re-mint a key already in use as
+     soon as a bucket has been removed, so probe for a free one. */
   const addCat = () =>
-    edit.setField(listPath, cur => [
-      ...(cur || []),
-      { key: 'bucket-' + ((cur || []).length + 1), label: '', blurb: '', image: '' },
-    ]);
+    edit.setField(listPath, cur => {
+      const list = cur || [];
+      const taken = new Set(list.map(c => c.key));
+      let n = list.length + 1;
+      while (taken.has('bucket-' + n)) n++;
+      return [...list, { key: 'bucket-' + n, label: '', blurb: '', image: '' }];
+    });
 
   /* Bulk upload: every photograph becomes a product already filed under this
      bucket, and the first one fills an empty tile so the grid never shows a
@@ -121,16 +129,16 @@ function HomeBuckets({ navigate }) {
 
   return (
     <section className="hm-buckets">
-      {(edit.active || smyHas(G.bucketsEyebrow, G.bucketsTitle)) && (
+      {(edit.active || smyHas(H.bucketsEyebrow, H.bucketsTitle)) && (
         <div className="hm-buckets__head">
-          {(edit.active || smyHas(G.bucketsEyebrow)) && (
+          {(edit.active || smyHas(H.bucketsEyebrow)) && (
             <span className="caption caption--accent">
-              <E path="gallery.bucketsEyebrow" ph="— Small heading…" />
+              <E path={`${homePath}.bucketsEyebrow`} ph="— Small heading…" />
             </span>
           )}
-          {(edit.active || smyHas(G.bucketsTitle)) && (
+          {(edit.active || smyHas(H.bucketsTitle)) && (
             <h2 className="hm-buckets__h">
-              <E path="gallery.bucketsTitle" ph="Section title…" />
+              <E path={`${homePath}.bucketsTitle`} ph="Section title…" />
             </h2>
           )}
         </div>

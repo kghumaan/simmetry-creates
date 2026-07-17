@@ -23,18 +23,22 @@ function Gallery({ navigate, route }) {
   const prefix = smyModePrefix(mode);
   const listPath = `products.${mode}`;
 
-  const catKey = smyRouteCategory(route);
-  const cat = catKey ? cats.find(c => c.key === catKey) : null;
+  // A key with no bucket behind it — a link to a bucket since removed or
+  // renamed — is not a collection at all, so show the full listing rather
+  // than a dead page headlined with the raw key from the URL.
+  const routeKey = smyRouteCategory(route);
+  const cat = routeKey ? cats.find(c => c.key === routeKey) : null;
+  const catKey = cat ? routeKey : null;
 
   // [{ p, i }] — i is the index into the flat list.
   const shown = all
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => !catKey || (p && p.category === catKey));
 
-  const title = catKey
-    ? (cat && smyHas(cat.label) ? cat.label : (catKey || ''))
+  const title = cat
+    ? (smyHas(cat.label) ? cat.label : cat.key)
     : (mode === 'jewelry' ? G.jewelryTitle : G.woodworkTitle);
-  const titlePath = catKey
+  const titlePath = cat
     ? null
     : `gallery.${mode === 'jewelry' ? 'jewelryTitle' : 'woodworkTitle'}`;
 
@@ -187,9 +191,11 @@ function ProductPage({ navigate, route }) {
   const [active, setActive] = React.useState(0);
   React.useEffect(() => { setActive(0); }, [route]);
 
-  // A stale or hand-typed index falls back to the gallery.
+  // A stale or hand-typed index falls back to the listing — the bare mode
+  // prefix is the home hero now, which would drop the reader out of the work
+  // entirely.
   React.useEffect(() => {
-    if (!product) navigate(prefix);
+    if (!product) navigate(prefix + '/all');
   }, [product, prefix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!product) return null;
