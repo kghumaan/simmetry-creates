@@ -232,34 +232,59 @@ function EditBar() {
   const [armReset, setArmReset] = React.useState(false);
   if (!edit.active) return null;
 
+  // The status colour: an explicit result wins; otherwise unsaved edits read
+  // as a gentle "remember to publish" amber, and the resting state is neutral.
+  const statusKind = edit.status ? edit.status.kind
+    : edit.dirty ? 'dirty'
+    : 'idle';
+
   return (
-    <div className="adm-savebar e-bar">
+    <div className="adm-savebar e-bar" role="region" aria-label="Admin editing controls">
       <div className="adm-savebar__inner">
-        <span className={`adm-status ${edit.status ? 'adm-status--' + edit.status.kind : ''}`}>
-          {edit.loading ? 'Fetching the latest published content…'
-            : edit.busy ? 'Working…'
-            : edit.status ? edit.status.text
-            : edit.dirty ? 'Unsaved changes — you are editing the site in place.'
-            : 'Editing the site in place — click any text to change it; empty it to remove it.'}
-        </span>
+        {/* Left: a standing "you are in admin" badge + the live status */}
+        <div className="adm-savebar__lead">
+          <span className="adm-badge">
+            <span className="adm-badge__dot" aria-hidden="true" />
+            Admin editing
+          </span>
+          <span
+            className={`adm-status adm-status--${statusKind}`}
+            role="status"
+            aria-live="polite"
+          >
+            {edit.loading ? 'Fetching the latest published content…'
+              : edit.busy ? 'Working…'
+              : edit.status ? edit.status.text
+              : edit.dirty ? 'Unsaved changes — press “Save & publish” to make them live.'
+              : 'Click any text to change it. Empty it to remove it.'}
+          </span>
+        </div>
+
+        {/* Right: secondary controls, then Exit, then Save — Save is always the
+            last child of a right-anchored row, so it never shifts. */}
         <div className="adm-savebar__actions">
-          {armReset ? (
-            <span className="adm-armed">
-              Reset everything?&nbsp;
-              <button type="button" className="adm-linkbtn adm-linkbtn--danger" onClick={() => { edit.resetAll(); setArmReset(false); }}>Yes</button>
-              &nbsp;·&nbsp;
-              <button type="button" className="adm-linkbtn" onClick={() => setArmReset(false)}>No</button>
-            </span>
-          ) : (
-            <button type="button" className="adm-linkbtn" onClick={() => setArmReset(true)}>Reset to original…</button>
-          )}
-          {edit.dirty && !edit.busy && (
-            <button type="button" className="adm-linkbtn" onClick={edit.discard}>Discard</button>
-          )}
-          <button type="button" className="adm-linkbtn" onClick={edit.lock}>Stop editing</button>
+          <div className="adm-savebar__secondary">
+            {armReset ? (
+              <span className="adm-armed">
+                <span className="adm-armed__q">Reset everything?</span>
+                <button type="button" className="adm-btn adm-btn--ghost adm-btn--danger" onClick={() => { edit.resetAll(); setArmReset(false); }}>Yes, reset</button>
+                <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setArmReset(false)}>No</button>
+              </span>
+            ) : (
+              <button type="button" className="adm-btn adm-btn--ghost" onClick={() => setArmReset(true)}>Reset to original…</button>
+            )}
+            {edit.dirty && !edit.busy && (
+              <button type="button" className="adm-btn adm-btn--ghost" onClick={edit.discard}>Discard changes</button>
+            )}
+          </div>
+
+          <button type="button" className="adm-btn adm-btn--exit" onClick={edit.lock}>
+            <span className="adm-btn__x" aria-hidden="true">✕</span> Exit editing
+          </button>
+
           <button
             type="button"
-            className="smy-cta smy-cta--solid"
+            className="adm-btn adm-btn--save"
             disabled={edit.busy || !edit.dirty || edit.loading}
             onClick={edit.save}
           >

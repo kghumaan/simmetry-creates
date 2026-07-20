@@ -167,33 +167,158 @@
 .adm-linkbtn--danger { color: var(--error); }
 .adm-armed { font-size: 14px; }
 
+/* The editing bar reads as a distinct control surface, not part of the page:
+   a solid ground, a thick accent cap, and a lift so it sits above the site. */
 .adm-savebar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   background: var(--surface);
-  border-top: 1px solid var(--hairline);
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 -8px 28px rgba(20, 14, 10, 0.16);
   z-index: 60;
 }
 .adm-savebar__inner {
-  max-width: 960px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 14px 28px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Left zone grows to fill, so the action cluster is always pinned to the
+   right edge no matter how long the status runs or how it wraps. */
+.adm-savebar__lead {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
   gap: 16px;
-  flex-wrap: wrap;
 }
+
+/* Standing "you are in admin" badge — always on, so the mode is unmistakable. */
+.adm-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.adm-badge__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+  animation: adm-pulse 1.8s var(--ease) infinite;
+}
+@keyframes adm-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .adm-badge__dot { animation: none; } }
+
+/* Status now a filled pill, colour-coded, sized to read at arm's length. */
+.adm-status {
+  min-width: 0;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--fg-muted);
+  background: color-mix(in oklab, var(--fg-muted) 12%, transparent);
+}
+.adm-status--dirty { color: #7a5a1f; background: color-mix(in oklab, #b8860b 20%, transparent); }
+.adm-status--ok    { color: #2f5c2b; background: color-mix(in oklab, #3f6c3a 20%, transparent); }
+.adm-status--warn  { color: #7a5a1f; background: color-mix(in oklab, #8a6a2f 22%, transparent); }
+.adm-status--err   { color: #fff;    background: var(--error); }
+
 .adm-savebar__actions {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 14px;
 }
-.adm-savebar .smy-cta:disabled { opacity: 0.4; cursor: default; }
-.adm-status { font-size: 14px; color: var(--fg-muted); max-width: 60ch; }
-.adm-status--ok { color: #3f6c3a; }
-.adm-status--warn { color: #8a6a2f; }
-.adm-status--err { color: var(--error); }
+.adm-savebar__secondary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.adm-armed {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.adm-armed__q { color: var(--error); font-weight: 600; }
+
+/* Shared button shape — generous touch targets for an unhurried hand. */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transition: background-color 160ms var(--ease), border-color 160ms var(--ease), color 160ms var(--ease);
+}
+.adm-btn--ghost {
+  color: var(--fg-muted);
+  padding: 0 12px;
+  min-height: 40px;
+}
+.adm-btn--ghost:hover { color: var(--fg); background: color-mix(in oklab, var(--fg) 8%, transparent); }
+.adm-btn--danger { color: var(--error); }
+.adm-btn--danger:hover { color: #fff; background: var(--error); }
+
+/* Exit — bordered so it plainly reads as a way out, not a faint link. */
+.adm-btn--exit {
+  border-color: var(--hairline);
+  color: var(--fg);
+}
+.adm-btn--exit:hover { border-color: var(--fg); background: color-mix(in oklab, var(--fg) 6%, transparent); }
+.adm-btn__x { font-size: 13px; opacity: 0.7; }
+
+/* Save — the one primary action, filled, always the rightmost thing. */
+.adm-btn--save {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: 0 26px;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+.adm-btn--save:hover:not(:disabled) { filter: brightness(1.06); }
+.adm-btn--save:disabled { opacity: 0.42; cursor: default; }
+.adm-btn--save .smy-cta__arrow { transition: transform 200ms var(--ease); }
+.adm-btn--save:hover:not(:disabled) .smy-cta__arrow { transform: translateX(3px); }
+
+/* Small screens: let the two rows stack, keep Save full-width and last. */
+@media (max-width: 860px) {
+  .adm-savebar__inner { flex-wrap: wrap; padding: 12px 16px; gap: 12px; }
+  .adm-savebar__lead { flex-basis: 100%; }
+  .adm-savebar__actions { flex-basis: 100%; justify-content: flex-end; flex-wrap: wrap; }
+}
 
 /* ---------- Per-piece product details panel -------------------------------- */
 .adm-thumb.is-selected { border-color: var(--accent); }
@@ -330,7 +455,8 @@
 
 /* Keep the fixed bar from covering the footer while editing */
 .e-bar + * { padding-bottom: 0; }
-html.is-editing body { padding-bottom: 76px; }
+html.is-editing body { padding-bottom: 92px; }
+@media (max-width: 860px) { html.is-editing body { padding-bottom: 168px; } }
 
 /* Replace-logo button beside the brand mark while editing */
 .e-logobtn { margin-left: 14px; display: inline-flex; align-items: center; }
