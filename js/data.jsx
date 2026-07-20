@@ -187,9 +187,16 @@ const SMY_DEFAULTS = {
   /* Home page — one hero, six buckets, one film, per mode. */
   home: {
     jewelry: {
-      // Placeholder until the studio supplies a hero frame. Picked for
-      // resolution (1696x2528 — no upscaling across a full-width hero) and
-      // for its soft left third, which the headline needs to sit against.
+      // Hero slideshow. `heroImages` drives it; `heroImage` mirrors the first
+      // frame for anything still reading the single field. `heroInterval` is
+      // the seconds between frames. Placeholders until the studio supplies its
+      // own — chosen for resolution and a soft left third for the headline.
+      heroImages: [
+        '/uploads/jewelry/1770438028429.png',
+        '/uploads/jewelry/1770444812567.png',
+        '/uploads/jewelry/1773636672403.png',
+      ],
+      heroInterval: 6,
       heroImage: '/uploads/jewelry/1770438028429.png',
       heroEyebrow: 'The studio · Spring intake',
       heroTitle: 'Quiet objects, made slowly.',
@@ -205,6 +212,12 @@ const SMY_DEFAULTS = {
       videoCta: 'See the process',
     },
     woodwork: {
+      heroImages: [
+        '/uploads/woodwork/20230703_205012.jpg',
+        '/uploads/woodwork/20231101_121228.jpg',
+        '/uploads/woodwork/20230408_141429.jpg',
+      ],
+      heroInterval: 6,
       heroImage: '/uploads/woodwork/20230703_205012.jpg',
       heroEyebrow: 'The shop · Spring intake',
       heroTitle: 'Joinery cut by hand.',

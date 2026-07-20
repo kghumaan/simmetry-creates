@@ -14,8 +14,29 @@
    ========================================================================= */
 
 /* -------------------------------------------------------------------------
-   Hero — image behind, type over a left-weighted scrim.
+   Hero — one or more photographs behind, type over a left-weighted scrim.
+
+   With more than one photograph the hero becomes a slow slideshow: each
+   frame slides in and fades over the last, on a timer the studio sets. A
+   single photograph (or the legacy `heroImage` string) just sits still.
    ------------------------------------------------------------------------- */
+
+// Seconds between hero frames, clamped to something watchable.
+const HERO_MIN_S = 2;
+const HERO_MAX_S = 20;
+const HERO_DEFAULT_S = 6;
+
+function heroImagesOf(H) {
+  const list = Array.isArray(H.heroImages) ? H.heroImages.filter(smyHas) : [];
+  if (list.length) return list;
+  return smyHas(H.heroImage) ? [H.heroImage] : [];
+}
+
+function heroIntervalOf(H) {
+  const n = Number(H.heroInterval);
+  if (!Number.isFinite(n)) return HERO_DEFAULT_S;
+  return Math.max(HERO_MIN_S, Math.min(HERO_MAX_S, Math.round(n)));
+}
 
 function HomeHero({ navigate }) {
   const { mode } = useMode();
@@ -25,11 +46,55 @@ function HomeHero({ navigate }) {
   const base = `home.${mode}`;
   const exploreHref = smyModePrefix(mode) + '/all';
 
+  const images = heroImagesOf(H);
+  const interval = heroIntervalOf(H);
+  const [idx, setIdx] = React.useState(0);
+
+  // Start each mode from its first frame; keep the index in range if the
+  // studio removes photographs mid-session.
+  React.useEffect(() => { setIdx(0); }, [mode]);
+  const active = images.length ? idx % images.length : 0;
+
+  // Auto-advance only for real visitors with more than one frame — never
+  // while the studio is arranging the photographs.
+  React.useEffect(() => {
+    if (edit.active || images.length < 2) return undefined;
+    const t = setInterval(
+      () => setIdx(i => (i + 1) % images.length),
+      interval * 1000
+    );
+    return () => clearInterval(t);
+  }, [edit.active, images.length, interval]);
+
+  // Writing the list also keeps `heroImage` pointing at the first frame, so
+  // anything still reading the single field stays correct.
+  const setHeroList = (list) => {
+    edit.setField(`${base}.heroImages`, list);
+    edit.setField(`${base}.heroImage`, list[0] || '');
+  };
+  const addHero = (urls) => setHeroList([...images, ...urls]);
+  const moveHero = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= images.length) return;
+    const next = [...images];
+    [next[i], next[j]] = [next[j], next[i]];
+    setHeroList(next);
+  };
+  const removeHero = (i) => setHeroList(images.filter((_, k) => k !== i));
+
   return (
     <section className="hm-hero">
-      {smyHas(H.heroImage) && (
-        <img className="hm-hero__img" src={H.heroImage} alt="" />
-      )}
+      <div className="hm-hero__slides">
+        {images.map((src, i) => (
+          <div
+            key={src + i}
+            className={`hm-hero__slide ${i === active ? 'is-active' : ''}`}
+            aria-hidden="true"
+          >
+            <img src={src} alt="" />
+          </div>
+        ))}
+      </div>
       <div className="hm-hero__scrim" />
       <div className="hm-hero__inner">
         <div className="hm-hero__type">
@@ -59,12 +124,56 @@ function HomeHero({ navigate }) {
           )}
         </div>
       </div>
+
+      {/* Slide dots — a quiet position marker for visitors, hidden while editing */}
+      {!edit.active && images.length > 1 && (
+        <div className="hm-hero__dots" aria-hidden="true">
+          {images.map((src, i) => (
+            <span key={src + i} className={`hm-hero__dot ${i === active ? 'is-active' : ''}`} />
+          ))}
+        </div>
+      )}
+
       {edit.active && (
-        <div className="hm-hero__edit e-row">
-          <EUpload
-            label="Replace hero photograph"
-            onDone={(urls) => edit.setField(`${base}.heroImage`, urls[0])}
-          />
+        <div className="hm-hero__admin">
+          <div className="hm-hero__admin-head">
+            <span className="caption">Hero photos · {images.length}</span>
+            <EUpload label="+ Add hero photos" multiple onDone={addHero} />
+          </div>
+
+          {images.length > 0 && (
+            <div className="hm-hero__thumbs">
+              {images.map((src, i) => (
+                <div className="hm-hero__thumb" key={src + i}>
+                  <img src={src} alt="" />
+                  <div className="hm-hero__thumbbar">
+                    <EBtn title="Move earlier" onClick={() => moveHero(i, -1)}>←</EBtn>
+                    <span className="num">{i + 1}</span>
+                    <EBtn title="Move later" onClick={() => moveHero(i, 1)}>→</EBtn>
+                    <EBtn danger title="Remove this photo" onClick={() => removeHero(i)}>×</EBtn>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label className="hm-hero__speed">
+            <span className="caption">Photos change every {interval} seconds</span>
+            <input
+              className="hm-hero__range"
+              type="range"
+              min={HERO_MIN_S}
+              max={HERO_MAX_S}
+              step="1"
+              value={interval}
+              onChange={(e) => edit.setField(`${base}.heroInterval`, Number(e.target.value))}
+            />
+            <span className="hm-hero__speedhint">
+              {images.length < 2
+                ? 'Add a second photo to start the slideshow.'
+                : 'Slide left for slower, right for faster.'}
+            </span>
+          </label>
         </div>
       )}
     </section>

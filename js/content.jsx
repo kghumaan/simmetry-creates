@@ -102,6 +102,20 @@ function smyMigrateContent(c) {
       }
     }
   }
+  // The hero became a slideshow (home.<mode>.heroImages). A save from before
+  // that carries a single `heroImage` and no `heroImages`; promote it to a
+  // one-frame list so it overrides the shipped default slideshow instead of
+  // being buried under it when the two trees merge.
+  if (out.home) {
+    out.home = { ...out.home };
+    for (const k of Object.keys(out.home)) {
+      const h = out.home[k];
+      if (h && typeof h === 'object' && !Array.isArray(h.heroImages)
+          && String(h.heroImage == null ? '' : h.heroImage).trim() !== '') {
+        out.home[k] = { ...h, heroImages: [h.heroImage] };
+      }
+    }
+  }
   // Flat bio1/step1 fields became bios[]/steps[] arrays.
   if (out.about) {
     const a = { ...out.about };
@@ -159,6 +173,7 @@ function smyAbsolutizePaths(c) {
         out.home[k] = {
           ...h,
           heroImage: fix(h.heroImage),
+          heroImages: Array.isArray(h.heroImages) ? h.heroImages.map(fix) : h.heroImages,
           videoPoster: fix(h.videoPoster),
           videoUrl: fix(h.videoUrl),
         };
