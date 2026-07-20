@@ -28,17 +28,15 @@
   display: block;
 }
 
-/* Slideshow: frames stacked, the active one slid to rest and faded up while
-   the rest wait just off to the right. A slow ground-drift on the active
-   frame keeps the hero feeling alive between changes. */
+/* Slideshow: frames stacked, held perfectly still. The only motion is a
+   gentle crossfade when it is time to turn to the next photograph. */
 .hm-hero__slides { position: absolute; inset: 0; overflow: hidden; }
 .hm-hero__slide {
   position: absolute;
   inset: 0;
   opacity: 0;
-  transform: translateX(6%) scale(1.04);
-  transition: opacity 1100ms var(--ease), transform 1100ms var(--ease);
-  will-change: opacity, transform;
+  transition: opacity 1200ms var(--ease);
+  will-change: opacity;
 }
 .hm-hero__slide img {
   width: 100%;
@@ -46,14 +44,9 @@
   object-fit: cover;
   display: block;
 }
-.hm-hero__slide.is-active {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-  transition: opacity 1100ms var(--ease), transform 7000ms linear;
-}
+.hm-hero__slide.is-active { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
-  .hm-hero__slide { transition: opacity 400ms linear; transform: none; }
-  .hm-hero__slide.is-active { transform: none; transition: opacity 400ms linear; }
+  .hm-hero__slide { transition: opacity 400ms linear; }
 }
 
 /* Position dots, bottom-right, out of the type's way */
