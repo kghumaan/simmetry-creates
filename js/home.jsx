@@ -290,6 +290,16 @@ function HomeBuckets({ navigate }) {
     );
   };
 
+  /* The tile shows its own photo when one is set; otherwise it borrows the
+     first piece filed under the bucket, so photos added from inside the
+     bucket page (not just bulk upload) still give the tile a cover. An
+     explicit "Tile photo" upload always wins. */
+  const tileImageOf = (c) => {
+    if (smyImgHas(c.image)) return c.image;
+    const first = products.find(p => p && p.category === c.key && smyImgHas(p.image));
+    return first ? first.image : '';
+  };
+
   return (
     <section className="hm-buckets">
       {(edit.active || smyHas(H.bucketsEyebrow, H.bucketsTitle)) && (
@@ -311,6 +321,7 @@ function HomeBuckets({ navigate }) {
         {cats.map((c, i) => {
           const href = smyCategoryHref(mode, c.key);
           const n = smyCountIn(products, c.key);
+          const tileImage = tileImageOf(c);
           return (
             <Reveal key={c.key + i} delay={(i % 3) * 70} className="hm-bucket">
               {/* The tile opens its bucket in edit mode too — the editable
@@ -322,8 +333,8 @@ function HomeBuckets({ navigate }) {
                 aria-label={`Open ${smyHas(c.label) ? c.label : c.key}`}
                 onClick={e => { e.preventDefault(); navigate(href); }}
               >
-                {smyImgHas(c.image)
-                  ? <img className="hm-bucket__img" src={smyImgSrc(c.image)} style={smyImgStyle(c.image)} alt="" loading="lazy" />
+                {smyImgHas(tileImage)
+                  ? <img className="hm-bucket__img" src={smyImgSrc(tileImage)} style={smyImgStyle(tileImage)} alt="" loading="lazy" />
                   : <span className="hm-bucket__empty" />}
                 <span className="hm-bucket__scrim" />
                 <span className="hm-bucket__body">
@@ -360,8 +371,10 @@ function HomeBuckets({ navigate }) {
                       label="Tile photo"
                       onDone={(urls) => edit.setField(`${listPath}.${i}.image`, urls[0])}
                     />
+                    {/* Cropping a borrowed cover writes it to the tile's own
+                        field, so the framing sticks even if pieces reorder. */}
                     <EImgAdjustBtn
-                      value={c.image}
+                      value={tileImage}
                       ratio={4 / 5}
                       title="Crop & zoom the tile photo"
                       onChange={(v) => edit.setField(`${listPath}.${i}.image`, v)}
