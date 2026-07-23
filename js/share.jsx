@@ -30,6 +30,13 @@
     try { return decodeURIComponent(s); } catch (e) { return s; }
   }
 
+  /* Image values can be crop objects ({ src, x, y, … }); og:image needs the
+     bare URL. */
+  function imgSrc(v) {
+    if (v && typeof v === 'object') return typeof v.src === 'string' ? v.src : '';
+    return typeof v === 'string' ? v : '';
+  }
+
   /* Published content once ContentProvider has resolved it (see
      js/content.jsx); the shipped defaults until then. Reading the live tree
      is what keeps a renamed or newly added bucket from sharing under its old
@@ -49,7 +56,7 @@
     const live = window.SMY_LIVE_CONTENT;
     const liveImages = (k) =>
       live && live.products && Array.isArray(live.products[k])
-        ? live.products[k].map(p => p && p.image)
+        ? live.products[k].map(p => imgSrc(p && p.image))
         : null;
     const jw = liveImages('jewelry') || data.JEWELRY_IMAGES || [];
     const ww = liveImages('woodwork') || data.WOODWORK_IMAGES || [];
@@ -73,7 +80,7 @@
         return {
           title: SITE + ' — ' + (hit.label || key),
           desc:  hit.blurb || fallbackDesc,
-          image: hit.image || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
+          image: imgSrc(hit.image) || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
         };
       }
     }

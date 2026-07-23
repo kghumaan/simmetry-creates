@@ -47,6 +47,62 @@ function smyLoadLocal() {
   catch { return null; }
 }
 
+/* -------------------------------------------------------------------------
+   Image values.
+
+   A stored image is either a plain URL string, or — once the admin has
+   framed it with the crop tool — an object:
+
+     { src, x, y, z, fit }
+
+   x/y are the focal point as object-position percentages (50/50 = center),
+   z is a zoom factor (1 = the normal cover fill), and fit is 'cover' or
+   'contain' ('contain' letterboxes the whole photograph, nothing cropped).
+   The crop is applied with CSS at render time, so the original file is
+   never touched and the framing can be undone at any point.
+   ------------------------------------------------------------------------- */
+
+function smyImgVal(v) {
+  if (v && typeof v === 'object') {
+    const n = (x, d) => (Number.isFinite(Number(x)) ? Number(x) : d);
+    return {
+      src: typeof v.src === 'string' ? v.src : '',
+      x: Math.min(100, Math.max(0, n(v.x, 50))),
+      y: Math.min(100, Math.max(0, n(v.y, 50))),
+      z: Math.min(4, Math.max(1, n(v.z, 1))),
+      fit: v.fit === 'contain' ? 'contain' : 'cover',
+    };
+  }
+  return { src: typeof v === 'string' ? v : '', x: 50, y: 50, z: 1, fit: 'cover' };
+}
+
+function smyImgSrc(v) { return smyImgVal(v).src; }
+function smyImgHas(v) { return smyImgSrc(v).trim() !== ''; }
+
+/* Inline style for an <img> that fills its box (the site's cover images).
+   Plain strings produce no style at all, so untouched photographs render
+   exactly as before. */
+function smyImgStyle(v) {
+  const a = smyImgVal(v);
+  if (!a.src) return undefined;
+  if (a.fit === 'contain') return { objectFit: 'contain' };
+  const style = {};
+  if (a.x !== 50 || a.y !== 50) style.objectPosition = `${a.x}% ${a.y}%`;
+  if (a.z !== 1) {
+    style.transform = `scale(${a.z})`;
+    style.transformOrigin = `${a.x}% ${a.y}%`;
+    if (!style.objectPosition) style.objectPosition = '50% 50%';
+  }
+  return Object.keys(style).length ? style : undefined;
+}
+
+/* The default framing (nothing cropped beyond the normal cover fill)
+   collapses back to the bare string so untouched saves stay clean. */
+function smyImgSerialize(a) {
+  if (a.fit === 'cover' && a.x === 50 && a.y === 50 && a.z === 1) return a.src;
+  return { src: a.src, x: Math.round(a.x * 10) / 10, y: Math.round(a.y * 10) / 10, z: Math.round(a.z * 100) / 100, fit: a.fit };
+}
+
 /* Saved content from older versions of the site needs two upgrades:
    - images.{mode} used to be plain arrays of URL strings; they are now
      products.{mode} arrays of objects (image, title, details, …)
@@ -142,7 +198,10 @@ function smyMigrateContent(c) {
 }
 
 function smyAbsolutizePaths(c) {
-  const fix = smyNormalizePath;
+  // Image values can be crop objects now — normalize the src inside those.
+  const fix = (v) => (v && typeof v === 'object'
+    ? { ...v, src: smyNormalizePath(v.src) }
+    : smyNormalizePath(v));
   if (!c) return c;
   const out = { ...c };
   if (out.products) {
@@ -274,19 +333,65 @@ async function uploadImage(file, password) {
   throw new Error(`Uploading failed (error ${r.status}) — try that photo again.`);
 }
 
-/* Downscale to keep uploads and inline fallbacks light. PNGs stay PNG so
-   transparency survives; everything else re-encodes as JPEG. */
-async function smyShrinkImage(file, maxDim = 1600, quality = 0.85) {
-  const bitmap = await createImageBitmap(file);
+/* Prepare an upload without giving away quality it doesn't have to.
+
+   The only hard ceiling is Vercel's ~4.5 MB request-body limit, so:
+   - a web-ready file that already fits goes up untouched, byte for byte;
+   - anything bigger is re-encoded from the full-resolution original at up
+     to 2560px on the long edge (sharper than any laptop hero needs), then
+     stepped down only as far as the body limit forces;
+   - PNGs keep PNG only when they actually use transparency — a photograph
+     saved as PNG re-encodes as JPEG at a fraction of the weight. */
+const SMY_UPLOAD_LIMIT = 4.2 * 1024 * 1024; // data-URL chars; under Vercel's 4.5 MB body cap
+
+function smyFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('could not be read.'));
+    r.readAsDataURL(file);
+  });
+}
+
+function smyBitmapHasAlpha(bitmap) {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, 64, 64);
+  const d = ctx.getImageData(0, 0, 64, 64).data;
+  for (let i = 3; i < d.length; i += 4) if (d[i] < 250) return true;
+  return false;
+}
+
+function smyEncodeBitmap(bitmap, maxDim, asPng, quality) {
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const w = Math.max(1, Math.round(bitmap.width * scale));
   const h = Math.max(1, Math.round(bitmap.height * scale));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
-  return file.type === 'image/png'
-    ? canvas.toDataURL('image/png')
-    : canvas.toDataURL('image/jpeg', quality);
+  return asPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', quality);
+}
+
+async function smyShrinkImage(file) {
+  const webReady = ['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+  if (webReady && file.size * 1.37 < SMY_UPLOAD_LIMIT) {
+    return smyFileToDataUrl(file); // fits as-is: original quality, untouched
+  }
+  const bitmap = await createImageBitmap(file);
+  const keepPng = file.type === 'image/png' && smyBitmapHasAlpha(bitmap);
+  const steps = [
+    { dim: 2560, q: 0.9 },
+    { dim: 2048, q: 0.85 },
+    { dim: 1600, q: 0.82 },
+    { dim: 1280, q: 0.78 },
+  ];
+  for (const s of steps) {
+    const url = smyEncodeBitmap(bitmap, s.dim, keepPng, s.q);
+    if (url.length <= SMY_UPLOAD_LIMIT) return url;
+  }
+  // A transparent PNG too heavy even at 1280 gives up its transparency.
+  return smyEncodeBitmap(bitmap, 1280, false, 0.72);
 }
 
 function ContentProvider({ children }) {
@@ -360,5 +465,6 @@ Object.assign(window, {
   ContentProvider, ContentContext, useContent, Lines,
   publishContent, uploadImage, verifyPassword,
   smyDeepMerge, smyGet, smySet, smyHas, smyInquiryVisible,
+  smyImgVal, smyImgSrc, smyImgHas, smyImgStyle, smyImgSerialize,
   smyResolveContent, SMY_LS_KEY,
 });

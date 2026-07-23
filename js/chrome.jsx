@@ -1,4 +1,5 @@
-/* global React, useContent, useEdit, E, EUpload, Lines, smyHas, smyInquiryVisible */
+/* global React, useContent, useEdit, E, EUpload, Lines, smyHas, smyInquiryVisible,
+   smyImgSrc, smyImgStyle */
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 /* =========================================================================
@@ -269,9 +270,11 @@ function TopNav({ route, navigate }) {
           )}
         </div>
 
-        {/* Centre — the buckets, the way Tacori runs its collections */}
+        {/* Centre — every bucket, in the order they run on the home page.
+            The list follows adds/removes/reorders live; when it outgrows the
+            row it scrolls sideways rather than truncating. */}
         <nav className="smy-topnav__nav smy-topnav__inline" aria-label="Main">
-          {cats.slice(0, 4).map((c, i) => (
+          {cats.map((c, i) => (
             <a key={c.key + i}
                className="smy-navlink"
                href={smyCategoryHref(mode, c.key)}
@@ -543,13 +546,21 @@ function Footer({ navigate }) {
    ========================================================================= */
 
 function Tile({ kind = 'portrait', label, tone = 0, corners = false, image, alt, fit = 'cover', children, className = '', style = {} }) {
-  if (image) {
+  // `image` can be a plain URL or a crop object from the framing tool.
+  const src = image ? smyImgSrc(image) : '';
+  if (src) {
     return (
       <div
         className={`smy-tile smy-tile--${kind} smy-tile--photo ${corners ? 'smy-tile__corners' : ''} ${className}`}
         style={style}
       >
-        <img className={`smy-tile__img smy-tile__img--${fit}`} src={image} alt={alt || label || ''} loading="lazy" />
+        <img
+          className={`smy-tile__img smy-tile__img--${fit}`}
+          style={smyImgStyle(image)}
+          src={src}
+          alt={alt || label || ''}
+          loading="lazy"
+        />
         {children}
       </div>
     );

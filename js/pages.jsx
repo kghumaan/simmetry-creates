@@ -1,6 +1,6 @@
-/* global React, useMode, useContent, useEdit, E, EBtn, EUpload, Lines, smyHas,
-   smyInquiryVisible, Tile, Emblem, Reveal, smyModePrefix, smyCategoryHref,
-   smyRouteCategory */
+/* global React, useMode, useContent, useEdit, E, EBtn, EUpload, EImgAdjustBtn,
+   Lines, smyHas, smyImgSrc, smyImgHas, smyInquiryVisible, Tile, Emblem, Reveal,
+   smyModePrefix, smyCategoryHref, smyRouteCategory */
 
 /* =========================================================================
    Gallery — the pieces in one bucket (/jewelry/c/necklaces), or all of them
@@ -83,36 +83,14 @@ function Gallery({ navigate, route }) {
         </section>
       )}
 
-      {/* Bucket strip — jump between collections without going home */}
-      {cats.length > 0 && (
-        <nav className="gal-strip" aria-label="Collections">
-          <a
-            className={`gal-strip__link ${!catKey ? 'is-active' : ''}`}
-            href={prefix + '/all'}
-            aria-current={!catKey ? 'page' : undefined}
-            onClick={e => { e.preventDefault(); navigate(prefix + '/all'); }}
-          >
-            {smyHas(G.allLabel) ? G.allLabel : 'All pieces'}
-          </a>
-          {cats.map((c, i) => (
-            <a
-              key={c.key + i}
-              className={`gal-strip__link ${catKey === c.key ? 'is-active' : ''}`}
-              href={smyCategoryHref(mode, c.key)}
-              aria-current={catKey === c.key ? 'page' : undefined}
-              onClick={e => { e.preventDefault(); navigate(smyCategoryHref(mode, c.key)); }}
-            >
-              {smyHas(c.label) ? c.label : c.key}
-            </a>
-          ))}
-        </nav>
-      )}
+      {/* The collections live in the top bar only — repeating them here read
+          as a second, stale menu. */}
 
       <section className="gal-grid">
         {shown.map(({ p, i }, pos) => {
           const href = prefix + '/' + i;
           return (
-            <Reveal key={(p.image || '') + i} delay={(pos % 6) * 50} className="gal-card">
+            <Reveal key={smyImgSrc(p.image) + i} delay={(pos % 6) * 50} className="gal-card">
               <a
                 className="gal-card__link"
                 href={href}
@@ -129,6 +107,12 @@ function Gallery({ navigate, route }) {
                   <EBtn title="Move earlier" onClick={() => moveProduct(pos, -1)}>←</EBtn>
                   <span className="num">{String(i + 1).padStart(2, '0')}</span>
                   <EBtn title="Move later" onClick={() => moveProduct(pos, 1)}>→</EBtn>
+                  <EImgAdjustBtn
+                    value={p.image}
+                    ratio={4 / 5}
+                    title="Crop & zoom this photo"
+                    onChange={(v) => edit.setField(`${listPath}.${i}.image`, v)}
+                  />
                   <EBtn title="Open to edit details" onClick={() => navigate(href)}>✎</EBtn>
                   <EBtn danger title="Remove this piece" onClick={() => removeProduct(i)}>×</EBtn>
                 </div>
@@ -201,7 +185,14 @@ function ProductPage({ navigate, route }) {
   if (!product) return null;
 
   const angles = Array.isArray(product.images) ? product.images : [];
-  const photos = [product.image, ...angles].filter(src => smyHas(src));
+  // Each photo remembers where it lives (main image or which angle), so the
+  // crop tool can write back to the right field even when the main image is
+  // empty and the list starts with an angle.
+  const photoRefs = [
+    { val: product.image, angle: -1 },
+    ...angles.map((val, k) => ({ val, angle: k })),
+  ].filter(p => smyImgHas(p.val));
+  const photos = photoRefs.map(p => p.val);
   const details = Array.isArray(product.details) ? product.details : [];
   const specs = edit.active
     ? details
@@ -234,8 +225,8 @@ function ProductPage({ navigate, route }) {
           <div className="pd-gallery">
             {(photos.length > 1 || edit.active) && (
               <div className="pd-thumbs" role="group" aria-label="More photographs">
-                {photos.map((src, i) => (
-                  <span key={src.slice(0, 80) + i} className="pd-thumbwrap">
+                {photoRefs.map((ref, i) => (
+                  <span key={smyImgSrc(ref.val).slice(0, 80) + i} className="pd-thumbwrap">
                     <button
                       type="button"
                       className={`pd-thumb ${i === active ? 'is-active' : ''}`}
@@ -244,12 +235,12 @@ function ProductPage({ navigate, route }) {
                       onMouseEnter={() => setActive(i)}
                       onClick={() => setActive(i)}
                     >
-                      <img src={src} alt="" loading="lazy" />
+                      <img src={smyImgSrc(ref.val)} alt="" loading="lazy" />
                     </button>
-                    {edit.active && i > 0 && (
+                    {edit.active && ref.angle >= 0 && (
                       <EBtn danger title="Remove this angle" onClick={() => {
                         setActive(0);
-                        patch({ images: angles.filter((_, k) => k !== i - 1) });
+                        patch({ images: angles.filter((_, k) => k !== ref.angle) });
                       }}>×</EBtn>
                     )}
                   </span>
@@ -270,6 +261,18 @@ function ProductPage({ navigate, route }) {
           {edit.active && (
             <div className="e-row">
               <EUpload label="Replace main photograph" onDone={(urls) => { patch({ image: urls[0] }); setActive(0); }} />
+              {photoRefs[active] && (
+                <EImgAdjustBtn
+                  value={photoRefs[active].val}
+                  ratio={3 / 4}
+                  title="Crop & zoom the photo on the stage"
+                  onChange={(v) => {
+                    const ref = photoRefs[active];
+                    if (ref.angle < 0) patch({ image: v });
+                    else patch({ images: angles.map((a, k) => (k === ref.angle ? v : a)) });
+                  }}
+                >⤢ Crop &amp; zoom</EImgAdjustBtn>
+              )}
             </div>
           )}
         </div>
@@ -451,6 +454,12 @@ function About({ navigate }) {
           {edit.active && (
             <div className="e-row">
               <EUpload label="Replace portrait" onDone={(urls) => edit.setField('about.portrait', urls[0])} />
+              <EImgAdjustBtn
+                value={A.portrait}
+                ratio={3 / 4}
+                title="Crop & zoom the portrait"
+                onChange={(v) => edit.setField('about.portrait', v)}
+              >⤢ Crop</EImgAdjustBtn>
             </div>
           )}
           {(edit.active || smyHas(A.portraitCaption)) && (

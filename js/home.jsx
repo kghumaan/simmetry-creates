@@ -1,4 +1,5 @@
-/* global React, useMode, useContent, useEdit, E, EBtn, EUpload, Reveal, smyHas,
+/* global React, useMode, useContent, useEdit, E, EBtn, EUpload, EImgAdjustBtn,
+   Reveal, smyHas, smyImgSrc, smyImgHas, smyImgStyle,
    smyModePrefix, smyCategoryHref, smyCountIn */
 
 /* =========================================================================
@@ -27,9 +28,9 @@ const HERO_MAX_S = 20;
 const HERO_DEFAULT_S = 6;
 
 function heroImagesOf(H) {
-  const list = Array.isArray(H.heroImages) ? H.heroImages.filter(smyHas) : [];
+  const list = Array.isArray(H.heroImages) ? H.heroImages.filter(smyImgHas) : [];
   if (list.length) return list;
-  return smyHas(H.heroImage) ? [H.heroImage] : [];
+  return smyImgHas(H.heroImage) ? [H.heroImage] : [];
 }
 
 function heroIntervalOf(H) {
@@ -79,19 +80,35 @@ function HomeHero({ navigate }) {
     const next = [...images];
     [next[i], next[j]] = [next[j], next[i]];
     setHeroList(next);
+    setIdx(j);
   };
-  const removeHero = (i) => setHeroList(images.filter((_, k) => k !== i));
+  const removeHero = (i) => { setHeroList(images.filter((_, k) => k !== i)); setIdx(0); };
+  const setHeroAt = (i, v) => setHeroList(images.map((cur, k) => (k === i ? v : cur)));
+
+  // Drag & drop reorder for the admin thumbnails (the arrows still work).
+  const [dragIdx, setDragIdx] = React.useState(null);
+  const [overIdx, setOverIdx] = React.useState(null);
+  const dropHero = (to) => {
+    const from = dragIdx;
+    setDragIdx(null); setOverIdx(null);
+    if (from == null || from === to) return;
+    const next = [...images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setHeroList(next);
+    setIdx(to);
+  };
 
   return (
     <section className="hm-hero">
       <div className="hm-hero__slides">
         {images.map((src, i) => (
           <div
-            key={src + i}
+            key={smyImgSrc(src) + i}
             className={`hm-hero__slide ${i === active ? 'is-active' : ''}`}
             aria-hidden="true"
           >
-            <img src={src} alt="" />
+            <img src={smyImgSrc(src)} style={smyImgStyle(src)} alt="" />
           </div>
         ))}
       </div>
@@ -129,7 +146,7 @@ function HomeHero({ navigate }) {
       {!edit.active && images.length > 1 && (
         <div className="hm-hero__dots" aria-hidden="true">
           {images.map((src, i) => (
-            <span key={src + i} className={`hm-hero__dot ${i === active ? 'is-active' : ''}`} />
+            <span key={smyImgSrc(src) + i} className={`hm-hero__dot ${i === active ? 'is-active' : ''}`} />
           ))}
         </div>
       )}
@@ -142,19 +159,56 @@ function HomeHero({ navigate }) {
           </div>
 
           {images.length > 0 && (
-            <div className="hm-hero__thumbs">
-              {images.map((src, i) => (
-                <div className="hm-hero__thumb" key={src + i}>
-                  <img src={src} alt="" />
-                  <div className="hm-hero__thumbbar">
-                    <EBtn title="Move earlier" onClick={() => moveHero(i, -1)}>←</EBtn>
-                    <span className="num">{i + 1}</span>
-                    <EBtn title="Move later" onClick={() => moveHero(i, 1)}>→</EBtn>
-                    <EBtn danger title="Remove this photo" onClick={() => removeHero(i)}>×</EBtn>
+            <>
+              <div className="hm-hero__thumbs">
+                {images.map((src, i) => (
+                  <div
+                    className={[
+                      'hm-hero__thumb',
+                      i === active ? 'is-current' : '',
+                      dragIdx === i ? 'is-dragging' : '',
+                      overIdx === i && dragIdx != null && dragIdx !== i ? 'is-dropover' : '',
+                    ].join(' ')}
+                    key={smyImgSrc(src) + i}
+                    draggable
+                    onDragStart={(e) => {
+                      setDragIdx(i);
+                      e.dataTransfer.effectAllowed = 'move';
+                      try { e.dataTransfer.setData('text/plain', String(i)); } catch { /* IE-ish */ }
+                    }}
+                    onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
+                    onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (overIdx !== i) setOverIdx(i); }}
+                    onDrop={(e) => { e.preventDefault(); dropHero(i); }}
+                  >
+                    <button
+                      type="button"
+                      className="hm-hero__thumbpick"
+                      aria-label={`Show photo ${i + 1} in the hero`}
+                      aria-pressed={i === active}
+                      onClick={() => setIdx(i)}
+                    >
+                      <img src={smyImgSrc(src)} alt="" draggable={false} />
+                    </button>
+                    <div className="hm-hero__thumbbar">
+                      <EBtn title="Move earlier" onClick={() => moveHero(i, -1)}>←</EBtn>
+                      <span className="num">{i + 1}</span>
+                      <EBtn title="Move later" onClick={() => moveHero(i, 1)}>→</EBtn>
+                      <EImgAdjustBtn
+                        value={src}
+                        ratio={2}
+                        title={`Crop & zoom photo ${i + 1}`}
+                        onChange={(v) => { setHeroAt(i, v); setIdx(i); }}
+                      />
+                      <EBtn danger title="Remove this photo" onClick={() => removeHero(i)}>×</EBtn>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              <p className="hm-hero__thumbhint">
+                Click a photo to see it in the hero behind. Drag photos into the
+                order you want, and use ⤢ to crop &amp; zoom one.
+              </p>
+            </>
           )}
 
           <label className="hm-hero__speed">
@@ -232,7 +286,7 @@ function HomeBuckets({ navigate }) {
       })),
     ]);
     edit.setField(listPath, cur =>
-      (cur || []).map(c => (c.key === key && !smyHas(c.image) ? { ...c, image: urls[0] } : c))
+      (cur || []).map(c => (c.key === key && !smyImgHas(c.image) ? { ...c, image: urls[0] } : c))
     );
   };
 
@@ -259,14 +313,17 @@ function HomeBuckets({ navigate }) {
           const n = smyCountIn(products, c.key);
           return (
             <Reveal key={c.key + i} delay={(i % 3) * 70} className="hm-bucket">
+              {/* The tile opens its bucket in edit mode too — the editable
+                  name/blurb stop the click themselves, so text editing and
+                  clicking through coexist. */}
               <a
                 className="hm-bucket__link"
                 href={href}
                 aria-label={`Open ${smyHas(c.label) ? c.label : c.key}`}
-                onClick={e => { e.preventDefault(); if (!edit.active) navigate(href); }}
+                onClick={e => { e.preventDefault(); navigate(href); }}
               >
-                {smyHas(c.image)
-                  ? <img className="hm-bucket__img" src={c.image} alt="" loading="lazy" />
+                {smyImgHas(c.image)
+                  ? <img className="hm-bucket__img" src={smyImgSrc(c.image)} style={smyImgStyle(c.image)} alt="" loading="lazy" />
                   : <span className="hm-bucket__empty" />}
                 <span className="hm-bucket__scrim" />
                 <span className="hm-bucket__body">
@@ -303,6 +360,12 @@ function HomeBuckets({ navigate }) {
                       label="Tile photo"
                       onDone={(urls) => edit.setField(`${listPath}.${i}.image`, urls[0])}
                     />
+                    <EImgAdjustBtn
+                      value={c.image}
+                      ratio={4 / 5}
+                      title="Crop & zoom the tile photo"
+                      onChange={(v) => edit.setField(`${listPath}.${i}.image`, v)}
+                    >⤢ Crop</EImgAdjustBtn>
                     <EUpload
                       label={`+ Bulk upload to ${smyHas(c.label) ? c.label : c.key}`}
                       multiple
