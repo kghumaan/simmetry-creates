@@ -362,7 +362,6 @@
 /* One rule across the listing: photography bleeds to the edge, type is
    inset to the same measure the home hero sets. */
 .gal-head,
-.gal-strip,
 .gal-empty {
   padding-inline: var(--type-inset);
 }
@@ -421,46 +420,20 @@
 .gal-filter__y.is-on { color: var(--fg); }
 .gal-filter__y.is-on::after { background: var(--accent); }
 
-/* Bucket strip — the collections, always one tap away from a listing */
-.gal-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 28px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--hairline);
-}
-.gal-strip__link {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-  opacity: 0.55;
-  padding: 8px 0;
-  border-bottom: 1px solid transparent;
-  transition: opacity 200ms var(--ease), border-color 200ms var(--ease);
-}
-.gal-strip__link:hover { opacity: 1; }
-.gal-strip__link.is-active {
-  opacity: 1;
-  border-bottom-color: var(--accent);
-}
-
 .gal-empty { padding-block: 24px 64px; }
 
 /* Full bleed — the pieces are the page, with only a hairline gutter. */
+/* minmax(0, 1fr): equal columns even when an admin control inside a card is
+   wide — same reasoning as .hm-grid. */
 .gal-grid {
   padding: 32px var(--bleed) 64px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 32px var(--tile-gap);
 }
-@media (max-width: 1200px) { .gal-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 900px) { .gal-grid { grid-template-columns: repeat(2, 1fr); gap: 28px var(--tile-gap); padding-bottom: 48px; } }
-@media (max-width: 540px) { .gal-grid { grid-template-columns: 1fr; gap: 28px; } }
+@media (max-width: 1200px) { .gal-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .gal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px var(--tile-gap); padding-bottom: 48px; } }
+@media (max-width: 540px) { .gal-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 .gal-card { display: flex; flex-direction: column; gap: 12px; }
 .gal-card__body { display: flex; flex-direction: column; gap: 8px; }
 .gal-card__top { display: flex; justify-content: space-between; }

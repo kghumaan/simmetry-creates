@@ -149,25 +149,47 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+/* Each thumb is one draggable card: the photo (click = preview it in the
+   hero behind), and a control bar sized to the card so nothing overlaps
+   its neighbours. */
 .hm-hero__thumb {
   position: relative;
-  width: 96px;
+  width: 132px;
+  cursor: grab;
 }
-.hm-hero__thumb img {
-  width: 96px;
-  height: 64px;
+.hm-hero__thumb.is-dragging { opacity: 0.35; }
+.hm-hero__thumb.is-dropover { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hm-hero__thumbpick {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid var(--hairline);
+  background: none;
+  cursor: pointer;
+}
+.hm-hero__thumb.is-current .hm-hero__thumbpick { border-color: var(--accent); }
+.hm-hero__thumbpick img {
+  width: 100%;
+  height: 76px;
   object-fit: cover;
   display: block;
-  border: 1px solid var(--hairline);
+  pointer-events: none;
 }
 .hm-hero__thumbbar {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 2px;
   margin-top: 4px;
 }
-.hm-hero__thumbbar .num { font-size: 11px; color: var(--fg-muted); min-width: 14px; text-align: center; }
+.hm-hero__thumbbar .e-btn { margin-left: 0; padding: 3px 6px; font-size: 12px; }
+.hm-hero__thumbbar .num { font-size: 11px; color: var(--fg-muted); min-width: 12px; text-align: center; }
+.hm-hero__thumbhint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
 
 /* Speed control — a big, obvious slider with the seconds spelled out. */
 .hm-hero__speed {
@@ -260,15 +282,19 @@
   margin: 0;
 }
 
-/* Edge to edge — the tiles are the page here, not cards on it. */
+/* Edge to edge — the tiles are the page here, not cards on it.
+   minmax(0, 1fr) pins every column to an equal share: a plain 1fr lets one
+   column grow to fit a wide admin control, which skews the tiles (they size
+   off column width) so the edit view stops matching the published page. */
 .hm-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--tile-gap);
   padding: 0 var(--bleed);
+  align-items: start;
 }
-@media (max-width: 980px) { .hm-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .hm-grid { grid-template-columns: 1fr; } }
+@media (max-width: 980px) { .hm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .hm-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .hm-bucket { position: relative; }
 
@@ -369,8 +395,11 @@
 .hm-bucket__uploads {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
+  min-width: 0;
 }
+.hm-bucket__uploads .e-btn { margin-left: 0; max-width: 100%; }
 .hm-bucket__hint {
   font-size: 12px;
   line-height: 1.45;

@@ -1,5 +1,6 @@
 /* global React, ContentContext, useContent, Lines, publishContent, uploadImage,
-   smyGet, smySet, smyHas, SMY_DEFAULTS */
+   smyGet, smySet, smyHas, smyImgVal, smyImgSrc, smyImgHas, smyImgSerialize,
+   SMY_DEFAULTS */
 
 /* =========================================================================
    In-place edit mode — the admin IS the live site.
@@ -225,6 +226,196 @@ function EUpload({ label, multiple, onDone, className = '' }) {
   );
 }
 
+/* ---------- Crop & zoom ----------------------------------------------------
+   A small framing tool for any photograph on the site. It never touches the
+   file itself — it stores a focal point + zoom that the pages apply with
+   CSS — so "Undo framing" always brings the original photograph back.
+
+   The preview box uses the exact same CSS the live page uses, so what is
+   framed here is what visitors see. Drag to move the photo, use the slider
+   (or scroll) to zoom, or switch to "Show whole photo" to letterbox it
+   uncropped. ------------------------------------------------------------- */
+
+function EImgAdjust({ value, ratio = 4 / 5, title, onApply, onClose }) {
+  const initial = React.useMemo(() => smyImgVal(value), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [adj, setAdj] = React.useState(initial);
+  const boxRef = React.useRef(null);
+  const imgRef = React.useRef(null);
+  const dragRef = React.useRef(null);
+
+  const clampPos = (n) => Math.min(100, Math.max(0, n));
+  const clampZoom = (n) => Math.min(4, Math.max(1, n));
+
+  // How many pixels of the photo hang outside the box on each axis at the
+  // current zoom — that's what a full 0→100 pan traverses.
+  const overflowPx = () => {
+    const box = boxRef.current, img = imgRef.current;
+    if (!box || !img || !img.naturalWidth) return { x: 0, y: 0 };
+    const bw = box.clientWidth, bh = box.clientHeight;
+    const s = Math.max(bw / img.naturalWidth, bh / img.naturalHeight) * adj.z;
+    return {
+      x: Math.max(0, img.naturalWidth * s - bw),
+      y: Math.max(0, img.naturalHeight * s - bh),
+    };
+  };
+
+  const onPointerDown = (e) => {
+    if (adj.fit === 'contain') return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { px: e.clientX, py: e.clientY, x: adj.x, y: adj.y };
+  };
+  const onPointerMove = (e) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const o = overflowPx();
+    setAdj(a => ({
+      ...a,
+      x: o.x > 0 ? clampPos(d.x - ((e.clientX - d.px) / o.x) * 100) : a.x,
+      y: o.y > 0 ? clampPos(d.y - ((e.clientY - d.py) / o.y) * 100) : a.y,
+    }));
+  };
+  const onPointerUp = () => { dragRef.current = null; };
+
+  // Scroll-to-zoom needs a non-passive listener; React's onWheel is passive.
+  React.useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return undefined;
+    const onWheel = (e) => {
+      e.preventDefault();
+      setAdj(a => (a.fit === 'contain'
+        ? a
+        : { ...a, z: clampZoom(a.z * (e.deltaY < 0 ? 1.06 : 1 / 1.06)) }));
+    };
+    box.addEventListener('wheel', onWheel, { passive: false });
+    return () => box.removeEventListener('wheel', onWheel);
+  }, []);
+
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const covering = adj.fit === 'cover';
+  const imgStyle = covering
+    ? {
+        objectFit: 'cover',
+        objectPosition: `${adj.x}% ${adj.y}%`,
+        transform: `scale(${adj.z})`,
+        transformOrigin: `${adj.x}% ${adj.y}%`,
+      }
+    : { objectFit: 'contain' };
+
+  return (
+    <div className="e-adjust" onClick={onClose} role="dialog" aria-modal="true" aria-label={title || 'Crop and zoom'}>
+      <div className="e-adjust__card" onClick={(e) => e.stopPropagation()}>
+        <div className="e-adjust__head">
+          <span className="caption">{title || 'Crop & zoom'}</span>
+          <button type="button" className="e-btn e-btn--danger" title="Close without applying" onClick={onClose}>✕</button>
+        </div>
+
+        <div
+          ref={boxRef}
+          className={`e-adjust__frame ${covering ? 'is-draggable' : ''}`}
+          style={{
+            aspectRatio: String(ratio),
+            // Tall ratios cap by height so the whole frame stays on screen.
+            width: `min(100%, calc(52vh * ${ratio}))`,
+          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          <img ref={imgRef} src={adj.src} alt="" draggable={false} style={imgStyle} />
+        </div>
+        <p className="e-adjust__hint">
+          {covering
+            ? 'Drag the photo to choose what shows. Zoom with the slider or by scrolling on the photo.'
+            : 'The whole photo shows, uncropped, with quiet bands filling the frame.'}
+        </p>
+
+        <div className="e-adjust__modes">
+          <button
+            type="button"
+            className={`e-btn e-btn--label ${covering ? 'is-on' : ''}`}
+            onClick={() => setAdj(a => ({ ...a, fit: 'cover' }))}
+          >Fill the frame</button>
+          <button
+            type="button"
+            className={`e-btn e-btn--label ${!covering ? 'is-on' : ''}`}
+            onClick={() => setAdj(a => ({ ...a, fit: 'contain' }))}
+          >Show whole photo</button>
+        </div>
+
+        {covering && (
+          <label className="e-adjust__zoom">
+            <span className="caption">Zoom · {adj.z.toFixed(2)}×</span>
+            <input
+              className="hm-hero__range"
+              type="range"
+              min="100"
+              max="300"
+              step="1"
+              value={Math.round(Math.min(3, adj.z) * 100)}
+              onChange={(e) => setAdj(a => ({ ...a, z: clampZoom(Number(e.target.value) / 100) }))}
+            />
+          </label>
+        )}
+
+        <div className="e-adjust__actions">
+          <button
+            type="button"
+            className="adm-btn adm-btn--ghost"
+            title="Back to the untouched photograph, centered"
+            onClick={() => setAdj(a => ({ src: a.src, x: 50, y: 50, z: 1, fit: 'cover' }))}
+          >Undo framing</button>
+          <button
+            type="button"
+            className="adm-btn adm-btn--ghost"
+            title="Back to how it was when this window opened"
+            onClick={() => setAdj(initial)}
+          >Revert</button>
+          <span className="e-adjust__spacer" />
+          <button type="button" className="adm-btn adm-btn--exit" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className="adm-btn adm-btn--save"
+            onClick={() => { onApply(smyImgSerialize(adj)); onClose(); }}
+          >Apply</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* The button that opens the framing tool. Renders nothing when there is no
+   photograph to frame yet. */
+function EImgAdjustBtn({ value, ratio, title = 'Crop & zoom', onChange, children, className = '' }) {
+  const [open, setOpen] = React.useState(false);
+  if (!smyImgHas(value)) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className={`e-btn ${className}`}
+        title={title}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
+      >{children || '⤢'}</button>
+      {open && (
+        <EImgAdjust
+          value={value}
+          ratio={ratio}
+          title={title}
+          onApply={onChange}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
 /* ---------- The bottom edit bar -------------------------------------------- */
 
 function EditBar() {
@@ -296,4 +487,4 @@ function EditBar() {
   );
 }
 
-Object.assign(window, { EditProvider, useEdit, E, EBtn, EUpload, EditBar });
+Object.assign(window, { EditProvider, useEdit, E, EBtn, EUpload, EditBar, EImgAdjust, EImgAdjustBtn });

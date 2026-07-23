@@ -461,3 +461,86 @@ html.is-editing body { padding-bottom: 92px; }
 /* Replace-logo button beside the brand mark while editing */
 .e-logobtn { margin-left: 14px; display: inline-flex; align-items: center; }
 .e-logobtn .e-btn--label { font-size: 12px; padding: 4px 8px; }
+
+/* ---------- Crop & zoom (framing) dialog ---------------------------------- */
+.e-adjust {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(20, 14, 10, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.e-adjust__card {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-top: 3px solid var(--accent);
+  box-shadow: 0 18px 60px rgba(20, 14, 10, 0.35);
+}
+.e-adjust__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.e-adjust__head .caption { color: var(--fg); }
+.e-adjust__head .e-btn { margin-left: 0; }
+.e-adjust__frame {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+  background: var(--photo-ground);
+  border: 1px solid var(--hairline);
+  touch-action: none;
+  user-select: none;
+}
+.e-adjust__frame.is-draggable { cursor: grab; }
+.e-adjust__frame.is-draggable:active { cursor: grabbing; }
+.e-adjust__frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+.e-adjust__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+.e-adjust__modes { display: flex; gap: 8px; }
+.e-adjust__modes .e-btn { margin-left: 0; }
+.e-adjust__modes .e-btn.is-on {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+.e-adjust__zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.e-adjust__zoom .caption { color: var(--fg-muted); }
+.e-adjust__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+}
+.e-adjust__spacer { flex: 1 1 auto; }
+.e-adjust__actions .adm-btn { min-height: 38px; padding: 0 14px; }
+.e-adjust__actions .adm-btn--save { padding: 0 20px; }

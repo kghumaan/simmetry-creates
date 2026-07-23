@@ -82,7 +82,9 @@ img { display: block; max-width: 100%; }
    column stays centred on the page regardless of how wide the sides run. */
 .smy-topnav__inner {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  /* Sides never shrink below their content (brand, mode toggle); the centre
+     gives way first and pans within itself once the bucket list is long. */
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
   align-items: center;
   gap: 24px;
   height: 72px;
@@ -97,13 +99,19 @@ img { display: block; max-width: 100%; }
   justify-self: start;
   min-width: 0;
 }
+/* The centre holds every bucket the studio has made. When the list outgrows
+   the row it pans sideways (no visible scrollbar) instead of clipping. */
 .smy-topnav__nav {
   display: flex;
   align-items: center;
   gap: clamp(16px, 2vw, 34px);
   justify-self: center;
   white-space: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.smy-topnav__nav::-webkit-scrollbar { display: none; }
 @media (max-width: 1100px) {
   .smy-topnav__inner { padding: 0 28px; gap: 16px; }
   .smy-topnav__nav { gap: 16px; }

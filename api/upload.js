@@ -1,7 +1,8 @@
 // Image upload API — stores admin-uploaded photographs in Vercel Blob.
 // POST /api/upload { password, name, dataUrl } -> { url }
-// The client downscales images before sending (see js/content.jsx), so
-// payloads stay well under Vercel's request-body limit.
+// The client keeps images at the best quality that fits Vercel's ~4.5 MB
+// request-body limit (see smyShrinkImage in js/content.jsx): small files
+// pass through untouched, larger ones re-encode at up to 2560px.
 
 const MAX_BYTES = 8 * 1024 * 1024;
 

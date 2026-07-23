@@ -13,6 +13,12 @@ becomes editable in place:
 - **Photographs**: reorder / remove / add pieces on any listing; open a piece
   to edit its title, description, detail lines (metal, weight, shape, …),
   optional price, bucket, and extra angle photos; replace the About portrait.
+- **Crop & zoom (⤢)**: every photograph slot has a small ⤢ button while
+  editing. It opens a framing window matched to the exact shape that spot
+  uses on the page: drag the photo to choose what shows, zoom with the
+  slider or by scrolling, or pick "Show whole photo" to letterbox it
+  uncropped. The file itself is never altered — "Undo framing" (or removing
+  the crop later) always brings the full original back.
 - **Add** story paragraphs, process steps, and product detail lines with the
   small “+” buttons.
 - Nothing changes for visitors until **Save & publish** in the bottom bar;
@@ -24,11 +30,16 @@ becomes editable in place:
 Each mode (jewelry, woodwork) has its own home page at `/jewelry` and
 `/woodwork`, in three parts — all editable in place:
 
-1. **Hero** — a full-bleed photograph about three quarters of the screen tall,
-   with an eyebrow, headline, one or two sentences, and a button.
-   “Replace hero photograph” sits at its bottom-right while editing.
-2. **Six buckets** — the collections, edge to edge. Clicking one opens its
-   pieces at `/jewelry/c/necklaces`.
+1. **Hero** — a full-bleed slideshow about three quarters of the screen tall,
+   with an eyebrow, headline, one or two sentences, and a button. While
+   editing, the panel at its bottom-right holds the photos: click a
+   thumbnail to preview it in the hero behind, drag thumbnails (or use the
+   arrows) to set the order, ⤢ crops one, × removes it, and the slider sets
+   how fast the frames turn.
+2. **The buckets** — the collections, edge to edge. Clicking a tile opens its
+   pieces at `/jewelry/c/necklaces` (in edit mode too — the name and blurb
+   stay click-to-edit). The top bar lists every bucket and follows
+   adds/removes/reorders as they happen.
 3. **The film** — a full-height band at the bottom.
 
 ### Bulk upload into a bucket
@@ -72,9 +83,13 @@ point at, so it is not editable from the site — changing keys means editing
   to the baked-in defaults.
 - "Save & publish" in the admin panel writes to localStorage (instant preview on
   that browser) **and** to the API, which makes the change live for everyone.
-- Uploaded photographs are downscaled in the browser (max 1600px) and stored in
-  Blob via `api/upload.js`. If the API isn't configured yet, they are embedded
-  inline in the content JSON as a fallback.
+- Uploaded photographs are stored in Blob via `api/upload.js` at the best
+  quality that fits the platform's ~4.5 MB request limit: files already under
+  ~3 MB upload byte-for-byte untouched; larger ones are re-encoded from the
+  full-resolution original at up to 2560px on the long edge (stepping down
+  only as far as the limit forces). Photographs saved as PNG without
+  transparency become JPEG, which is far lighter at the same look. If the API
+  isn't configured yet, images embed inline in the content JSON as a fallback.
 
 ## One-time setup (≈2 minutes)
 
