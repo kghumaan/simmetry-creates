@@ -77,10 +77,19 @@
         const fallbackDesc = isWw
           ? 'Bespoke woodwork, made slowly.'
           : 'Fine jewelry, made slowly.';
+        // A bucket with no tile photo shares its first piece instead — the
+        // same fallback the home tile uses.
+        const modeKey = isWw ? 'woodwork' : 'jewelry';
+        const prods = (live && live.products && Array.isArray(live.products[modeKey]))
+          ? live.products[modeKey]
+          : ((window.SMY_DEFAULTS && window.SMY_DEFAULTS.products && window.SMY_DEFAULTS.products[modeKey]) || []);
+        const firstPiece = prods.find(p => p && p.category === key && imgSrc(p.image));
         return {
           title: SITE + ' — ' + (hit.label || key),
           desc:  hit.blurb || fallbackDesc,
-          image: imgSrc(hit.image) || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
+          image: imgSrc(hit.image)
+            || (firstPiece && imgSrc(firstPiece.image))
+            || ('/assets/emblem-' + (isWw ? 'woodwork' : 'jewelry') + '.png'),
         };
       }
     }
